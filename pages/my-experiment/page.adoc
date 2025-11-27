@@ -1,0 +1,42 @@
+= My Experiment
+:author: Axel Sorenson
+:date: 2025-11-26
+
+test test test.
+
+This plot is generated at build time by a simple script:
+
+image::generated/plot.svg[Experiment plot]
+
+== Runnable WASM demo
+
++++
+<div id="wasm-demo">
+  <pre id="wasm-output">Output will appear here.</pre>
+  <button id="wasm-run">Run WASM</button>
+  <script src="wasm/wasm-loader.js?v=3"></script>
+</div>
++++
+
+== Embedded JSON
+
++++
+<pre id="json-data">Loading…</pre>
+<script>
+fetch('generated/data.json').then(r=>r.json()).then(j=>{
+  document.getElementById('json-data').textContent = JSON.stringify(j, null, 2);
+})
+ </script>
+ +++
+
+== Rust Code Sample
+
+[source,rust]
+----
+// Simple Rust example to demonstrate syntax highlighting
+fn main() {
+    let nums = [1, 2, 3, 5, 8, 13];
+    let sum: i32 = nums.iter().sum();
+    println!("Sum is {}", sum);
+}
+----

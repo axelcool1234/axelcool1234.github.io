@@ -1,0 +1,24 @@
+= About Me
+:noheader:
+
+[.profile-card]
+--
+image::https://avatars.githubusercontent.com/axelcool1234?s=256[alt=Profile photo]
+
+[.profile-meta]
+[.profile-name]
+* *Axel Sorenson*
+* he/him/his
+* 🎓 PhD @ U of U
+* 📍 Salt Lake City, UT
+* 🏫 University of Utah
+* ✉️ link:mailto:AxelPSorenson@gmail.com[Email]
+* 🐙 link:https://github.com/axelcool1234[GitHub]
+* 🔗 link:https://www.linkedin.com/in/axel-sorenson/[LinkedIn]
+--
+ 
+== About Me
+ 
+Hi, I'm Axel Sorenson. I'm a PhD student of Professor https://users.cs.utah.edu/~regehr/[John Regehr] at the https://www.utah.edu/[University of Utah]. I earned my Bachelor's degree in Computer Science at the https://uci.edu/[University of California, Irvine], graduating Summa cum laude with a GPA of 4.0. 
+
+My research is in the intersection of compilers and formal methods.
