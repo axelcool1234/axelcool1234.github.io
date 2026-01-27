@@ -54,8 +54,8 @@
   content(p110, [ *λCBN* / *λWNO* ], anchor: "south-west", padding: .2) // Call-by-Name
 
   // Eager
-  circle(p111, radius: 0.1, fill: green)
-  content(p111, [ *λCBV* ], anchor: "north-west", padding: .2) // Call-by-Value
+  circle(p011, radius: 0.1, fill: green)
+  content(p011, [ *λCBV* ], anchor: "north-east", padding: .2) // Call-by-Value
 
 
   // Applicative
