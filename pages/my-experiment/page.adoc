@@ -48,3 +48,29 @@ image::generated/automaton.svg[width=60%]
 
 == Typst Test
 image::generated/complex-plane.svg[width=60%]
+
+== Lambda Reduction Cube
+There are 3 axes:
+
+* Redex Selection
+** Outermost (leftmost-outermost)
+** Innermost (leftmost-innermost)
+* λ-Strength
+** Unrestricted (reduction under lambda abstractions allowed)
+** Abstraction-restricted (reduction under lambda abstractions now allowed)
+* β-restriction
+** Unrestricted (arguments to an application don't have to be a value)
+** Value-restricted (arguments to an application have to be a value)
+
+Key:
+
+* λNO: Normal-Order reduction
+* λAO: Applicative-Order reduction
+* λCBN: Call-By-Name reduction (the same as Weak Normal-Order reduction)
+* λCBVₘ: Call-By-Value reduction (For machines)
+* λCBVᵣ: Call-By-Value reduction (For redexes)
+* λWAO: Weak Applicative-Order reduction
+* λWNO: Weak Normal-Order reduction (the same as Call-By-Name reduction)
+
+.Cube
+image::generated/cube.svg
