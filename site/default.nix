@@ -1,5 +1,6 @@
 {
   pkgs,
+  typix,
   wasmHashes ? { },
   templates ? ../templates,
   assetHashes ? { },
@@ -7,7 +8,7 @@
 
 let
   pagesDir = ../pages;
-  pageLib = import ../lib/page.nix { inherit pkgs; };
+  pageLib = import ../lib/page.nix { inherit pkgs; inherit typix; };
   feedLib = import ../lib/feed.nix { inherit pkgs; };
   pageNames = pkgs.lib.attrNames (
     pkgs.lib.filterAttrs (_: v: v == "directory") (builtins.readDir pagesDir)

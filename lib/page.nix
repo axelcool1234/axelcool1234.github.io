@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, typix }:
 
 let
   pythonGen =
@@ -22,18 +22,68 @@ let
     {
       file,
       outName,
-      args ? [ ],
+      packages ? [ ],
     }:
     let
-      argsStr = pkgs.lib.concatStringsSep " " args;
-      dir = builtins.dirOf file;
-      base = builtins.baseNameOf file;
-      cmd = ''cd ${dir}; ${pkgs.typst}/bin/typst compile ${base} ${argsStr} "$out/${outName}"'';
+      build-script = typix.lib.${pkgs.system}.buildTypstProjectLocal {
+        unstable_typstPackages = packages;
+        name = "typst-${builtins.baseNameOf file}";
+        src = builtins.path { path = builtins.dirOf file; }; 
+        typstSource = builtins.baseNameOf file;
+        typstOpts = { format = if pkgs.lib.hasSuffix ".svg" outName then "svg" else "pdf"; };
+      };
     in
     cmdGen {
       inherit outName;
       runtimeInputs = [ pkgs.typst ];
-      inherit cmd;
+      redirect = false;
+
+      cmd = ''
+        ${build-script}/bin/typst-build "$out/${outName}"
+      '';
+    };
+
+  latexGen =
+    {
+      file,           # ./diagram.tex
+      outName,        # diagram.svg | diagram.pdf
+      engine ? "pdflatex",
+      post ? null,    # "pdf2svg" | "none"
+      args ? [ ],
+    }:  
+   let
+      base = builtins.baseNameOf file;
+      stem = pkgs.lib.removeSuffix ".tex" base;
+      argsStr = pkgs.lib.concatStringsSep " " args;
+
+      latex = {
+        pdflatex = "${pkgs.texliveFull}/bin/pdflatex";
+        lualatex = "${pkgs.texliveFull}/bin/lualatex";
+        xelatex = "${pkgs.texliveFull}/bin/xelatex";
+      }.${engine};
+    in
+    cmdGen {
+      inherit outName;
+      runtimeInputs = [
+        pkgs.texliveFull
+        pkgs.pdf2svg
+      ];
+      cmd = ''
+        set -euo pipefail
+
+        work="$TMPDIR/latex"
+        mkdir -p "$work"
+        cp ${file} "$work/${base}"
+        cd "$work"
+
+        ${latex} -interaction=nonstopmode -halt-on-error ${argsStr} ${base}
+
+        if [ "${post}" = "svg" ]; then
+          ${pkgs.pdf2svg}/bin/pdf2svg ${stem}.pdf "$out/${outName}"
+        else
+          cp ${stem}.pdf "$out/${outName}"
+        fi
+      '';
       redirect = false;
     };
 
@@ -174,7 +224,7 @@ let
           typstGen {
             file = g.typst;
             outName = g.out;
-            args = (g.args or [ ]);
+            packages = (g.packages or [ ]);
           }
         else if g ? cmd then
           cmdGen {
@@ -182,6 +232,14 @@ let
             runtimeInputs = (g.runtimeInputs or [ ]);
             cmd = g.cmd;
           }
+        else if g ? latex then
+          latexGen ({
+            file = g.latex;
+            outName = g.out;
+            engine = (g.engine or "pdflatex");
+            post = (g.post or null);
+            args = (g.args or [ ]);
+          } // g.latex)
         else
           (throw "mkPage: generator must have one of: drv, python, typst, cmd");
 
@@ -210,6 +268,7 @@ in
     pythonGen
     cmdGen
     typstGen
+    latexGen
     wasmModule
     buildPage
     mkPage

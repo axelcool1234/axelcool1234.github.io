@@ -3,10 +3,11 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    typix.url = "github:loqusion/typix";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
+  outputs = { self, nixpkgs, flake-utils, typix, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -38,6 +39,7 @@
             paletteCssPath    = "css/catppuccin.css";
           };
           wasmHashes = { "my-experiment" = "sha256-09TVjf9289QRexeyR7Fle/fNKp4cioi6Rpj1mCbbi1Q="; };
+          inherit typix;
         };
 
         apps.dev = {
