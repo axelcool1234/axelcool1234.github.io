@@ -17,10 +17,10 @@
   let p010 = (0, s, 0) // Innermost, λ-Weak, β-Unrestricted (Weak Applicative)
   let p110 = (s, s, 0) // Outermost, λ-Weak, β-Unrestricted (Call-by-Name)
 
-  let p001 = (0, 0, s) // Innermost, λ-Strong, β-Restricted (Rare)
+  let p001 = (0, 0, s) // Innermost, λ-Strong, β-Restricted
   let p101 = (s, 0, s) // Outermost, λ-Strong, β-Restricted
-  let p011 = (0, s, s) // Innermost, λ-Weak, β-Restricted (Call-by-Value - Machine)
-  let p111 = (s, s, s) // Outermost, λ-Weak, β-Restricted (Call-by-Value - Redex)
+  let p011 = (0, s, s) // Innermost, λ-Weak, β-Restricted (Call-by-Value)
+  let p111 = (s, s, s) // Outermost, λ-Weak, β-Restricted
 
 
   // Draw Axes for clarity
@@ -54,11 +54,8 @@
   content(p110, [ *λCBN* / *λWNO* ], anchor: "south-west", padding: .2) // Call-by-Name
 
   // Eager
-  circle(p011, radius: 0.1, fill: green)
-  content(p011, [ *λCBVₘ* ], anchor: "north-east", padding: .2) // Call-by-Value (Machine)
-
   circle(p111, radius: 0.1, fill: green)
-  content(p111, [ *λCBVᵣ* ], anchor: "north-west", padding: .2) // Call-by-Value (Redex)
+  content(p111, [ *λCBV* ], anchor: "north-west", padding: .2) // Call-by-Value
 
 
   // Applicative

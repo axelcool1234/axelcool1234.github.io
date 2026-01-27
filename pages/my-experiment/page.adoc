@@ -55,10 +55,10 @@ There are 3 axes:
 * Redex Selection
 ** Outermost (leftmost-outermost)
 ** Innermost (leftmost-innermost)
-* λ-Strength
+* λ-Restriction
 ** Unrestricted (reduction under lambda abstractions allowed)
 ** Abstraction-restricted (reduction under lambda abstractions now allowed)
-* β-restriction
+* β-Restriction (What is considered a redex)
 ** Unrestricted (arguments to an application don't have to be a value)
 ** Value-restricted (arguments to an application have to be a value)
 
@@ -67,10 +67,17 @@ Key:
 * λNO: Normal-Order reduction
 * λAO: Applicative-Order reduction
 * λCBN: Call-By-Name reduction (the same as Weak Normal-Order reduction)
-* λCBVₘ: Call-By-Value reduction (For machines)
-* λCBVᵣ: Call-By-Value reduction (For redexes)
+* λCBV: Call-By-Value reduction
 * λWAO: Weak Applicative-Order reduction
 * λWNO: Weak Normal-Order reduction (the same as Call-By-Name reduction)
 
 .Cube
 image::generated/cube.svg
+
+Please note - selection and λ-restriction (also known as strong and weak) are
+common in literature. In fact, most of the time Call-By-Value is considered the same
+as Weak Applicative Order. Selection and λ-restriction are positional in nature,
+with one determining which redex to contract first and the other blocking some
+redexes from being contracted. β-Restriction is different, in that it also
+determines what _is_ a redex to begin with. β-Restricted evaluation simply says
+that (λx.M) N is not a redex if N is not a value.
