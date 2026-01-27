@@ -49,7 +49,7 @@ image::generated/automaton.svg[width=60%]
 == Typst Test
 image::generated/complex-plane.svg[width=60%]
 
-== Lambda Reduction Cube
+== Untyped Impure Lambda Reduction Cube
 There are 3 axes:
 
 * Redex Selection
@@ -72,12 +72,10 @@ Key:
 * λWNO: Weak Normal-Order reduction (the same as Call-By-Name reduction)
 
 .Cube
-image::generated/cube.svg
+image::generated/cube.svg[width=60%]
 
-Please note - selection and λ-restriction (also known as strong and weak) are
-common in literature. In fact, most of the time Call-By-Value is considered the same
-as Weak Applicative Order. Selection and λ-restriction are positional in nature,
-with one determining which redex to contract first and the other blocking some
-redexes from being contracted. β-Restriction is different, in that it also
-determines what _is_ a redex to begin with. β-Restricted evaluation simply says
-that (λx.M) N is not a redex if N is not a value.
+Please note - selection and λ-restriction (λ-restriction is also known as strong and weak) are common in literature while β-restriction is not. In fact, most of the time Call-By-Value is considered the same as Weak Applicative Order. In _pure_ lambda calculus, this is true! However, if we concern ourselves with impure lambda calculus, we must restrict what is considered a redex. Selection and λ-restriction are positional in nature, with one determining which redex to contract first and the other blocking some redexes from being contracted. Note that this isn't detereming what _is_ a redex, just which one is contracted first. β-Restriction is different, in that it also determines what _is_ a redex to begin with. β-Restricted evaluation says that (λx.M) N is not a redex if N is not a value.
+
+To show the reason why β-Restriction is its own axis, I'll show you how it differentiates Weak Applicative-Order reduction from Call-By-Value reduction in impure lambda calculus (remember, they're the same in pure lambda calculus). Lets say we have an impure lambda calculus where the natural numbers are values. Let's say we have the following term:  (λx.x) (2 7). In Weak Applicative-Order reduction, this'd fully reduce to (2 7). In Call-By-Value reduction (which is β-Restricted), this wouldn't reduce at all - it'd stay as (λx.x) (2 7). In the pure lambda calculus, however, the "2" and "7" would themselves be lambda abstractions of some form. Because of this, both Weak Applicative-Order reduction and Call-By-Value reduction would reduce this to the same result (which would be "14", if "2" and "7" are Church numerals). 
+
+This is all to say that if we are only concerning ourselves with pure lambda calculus, the β-Restriction axis could be removed entirely! 
