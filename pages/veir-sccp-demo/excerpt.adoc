@@ -1,0 +1,1 @@
+An interactive presentation page for my VeIR compiler work on sparse conditional constant propagation, shipped as a nested static demo inside this site.

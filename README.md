@@ -42,6 +42,15 @@ Includes a dev server with hot reload, feed cards with categories, and a simple 
 - `default.nix` that calls `mkPage` from `lib/page.nix`
 - Optional `excerpt.adoc`, generator scripts, and/or `wasm-src/`
 
+**Bundle a Nested Static App**
+- If a project is better expressed as its own static app, keep a normal `page.adoc` landing page for the feed and build the app into a sibling folder with the same slug.
+- Example shape:
+  - `pages/my-demo/page.adoc` -> renders `my-demo.html`
+  - `pages/my-demo/app/` -> frontend source built into `my-demo/index.html`
+- In the page module, compose the landing page derivation with an app derivation using `pkgs.symlinkJoin`.
+- For Vite apps, build with a relative base such as `--base=./` so the emitted assets work from `/my-demo/` on GitHub Pages.
+- Keep the app source inside this repo, or in a submodule that your Pages workflow checks out. The Pages build only has access to the website repository contents.
+
 Example `pages/my-experiment/default.nix`:
 ```
 { pkgs, templates, pageLib, wasmCargoHash ? null }:

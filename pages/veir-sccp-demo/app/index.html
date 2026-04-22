@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCCP in Veir</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="page-glow page-glow-left"></div>
+    <div class="page-glow page-glow-right"></div>
+
+    <header class="site-header">
+      <div class="wrap hero-grid">
+        <div>
+          <div class="eyebrow">veir analysis notes</div>
+          <h1>Sparse Conditional Constant Propagation in Veir</h1>
+          <p class="lede">
+            Framework types, lattice/state types, and two user analyses.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap post">
+      <article>
+        <section>
+          <div class="section-kicker">analysis types</div>
+          <h2>Main API</h2>
+          <div class="card-grid two-up">
+            <section class="info-card">
+              <div class="card-topline">shared state</div>
+              <h3><code>DataFlowContext</code></h3>
+              <p>
+                This is the shared store for the entire fixpoint loop. All loaded
+                analyses read and write facts through the same context.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean" data-code-asides="dataflow-context">structure DataFlowContext where
+  analyses : HashMap Lean.Name DataFlowAnalysis
+  lattice : HashMap LatticeAnchor (HashMap Lean.Name ErasedAnalysisState)
+  workList : WorkList</code></pre>
+            </section>
+
+            <section class="info-card">
+              <div class="card-topline">generic layer</div>
+              <h3><code>DataFlowAnalysis</code></h3>
+              <p>
+                This is the abstraction every analysis plugs into. The solver itself
+                only knows how to initialize analyses, pop worklist items in the fixpoint loop, and call
+                <code>visit</code> until a fixpoint is reached.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean" data-code-asides="dataflow-analysis">structure DataFlowAnalysis where
+  id : Lean.Name
+  init : OperationPtr -&gt; ...
+  visit : ProgramPoint -&gt; ...</code></pre>
+            </section>
+
+            <section class="info-card">
+              <div class="card-topline">sparse layer</div>
+              <h3><code>SparseForwardDataFlowAnalysis</code></h3>
+              <p>
+                This extension requires that the lattice facts are attached to SSA values.
+                It does use-def propagation and block-argument propagation of those lattice facts.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean" data-code-asides="sparse-analysis-new">def new
+    (Domain : Type)
+    (analysisName : Lean.Name)
+    (visitOperationImpl : VisitOperationFn)
+    (setToEntryState : SetToEntryStateFn) :
+    DataFlowAnalysis :=
+  DataFlowAnalysis.new
+    analysisName
+    (init (Domain := Domain) analysisName visitOperationImpl setToEntryState)
+    (visit (Domain := Domain) analysisName visitOperationImpl setToEntryState)</code></pre>
+
+              <div class="inline-note-panel">
+                <div class="note-inline-topline">expandable note</div>
+                <p class="inline-note-copy">
+                  <code>setToEntryState</code> explanation.
+                </p>
+                <button id="toggle-note" class="toggle">Open note</button>
+
+                <div id="note-shell" class="note-shell collapsed" aria-live="polite">
+                  <div class="note-chrome">
+                    <div class="note-label">editorial aside</div>
+                    <div id="note-content" class="note-content"></div>
+                    <div class="note-meta">
+                      <span id="line-count">0 lines</span>
+                      <span id="box-height">0 px</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="info-card">
+              <div class="card-topline">solver entry point</div>
+              <h3><code>fixpointSolve</code></h3>
+              <p>
+                This is the top-level function that computes the joint fixpoint
+                for all analyses loaded into the solver.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean" data-code-asides="fixpoint-solve">def fixpointSolve (top : OperationPtr)
+    (analyses : Array DataFlowAnalysis)
+    (irCtx : IRContext OpCode) : DataFlowContext := Id.run do
+  let mut dfCtx := DataFlowContext.empty
+  for analysis in analyses do
+    dfCtx := dfCtx.insertAnalysis analysis
+  for analysis in analyses do
+    dfCtx := analysis.init top dfCtx irCtx
+  run dfCtx irCtx</code></pre>
+            </section>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-kicker">lattice types</div>
+          <h2>Lattice Elements/States</h2>
+          <p>
+            In lattice theory, there are lattice elements that can be top, bottom, etc.
+            In this dataflow framework, that is encoded with <code>LatticeElement</code>.
+            But more information is often needed in regards to a specific lattice element.
+            The <code>*State</code> types contain that information, such as what depends
+            on this <code>LatticeElement</code>.
+          </p>
+          <div class="card-grid two-up">
+            <section class="info-card compact-card">
+              <h3><code>LatticeElement</code></h3>
+              <p>
+                Gives a domain its algebra: <code>bottom</code>,
+                <code>top</code>, <code>join</code>, and <code>meet</code>.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean" data-code-asides="lattice-element">class LatticeElement (Domain : Type) extends BEq Domain where
+  typeNameInst : TypeName Domain
+  bottom : Domain
+  top : Domain
+  join : Domain -> Domain -> Domain
+  meet : Domain -> Domain -> Domain</code></pre>
+            </section>
+
+            <section class="info-card compact-card">
+              <h3><code>AnalysisStateHeader</code></h3>
+              <p>
+                Stores the anchor a fact refers to plus explicit
+                <code>dependents</code> that should be re-enqueued when the fact
+                changes.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean">structure AnalysisStateHeader where
+  anchor : LatticeAnchor
+  dependents : Array WorkItem</code></pre>
+            </section>
+
+            <section class="info-card compact-card">
+              <h3><code>AnalysisState</code></h3>
+              <p>
+                Adds <code>onUpdate</code>, which is a hook that is run when the lattice
+                state changes. Typically enqueues dependents and notifies subscribers.
+              </p>
+              <p>
+                Users making their own analysis state types extend <code>AnalysisStateHeader</code> and create
+                an instance of <code>AnalysisState</code>.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean">class AnalysisState (State : Type u) where
+  typeNameInst : TypeName State
+  mkState : LatticeAnchor -> State
+  onUpdate : State -> DataFlowContext -> IRContext OpCode -> DataFlowContext
+  toHeader : State -> AnalysisStateHeader</code></pre>
+            </section>
+
+            <section class="info-card compact-card">
+              <h3><code>SparseLatticeState</code></h3>
+              <p>
+                Holds a lattice element of the specified lattice <code>Domain</code> plus <code>useDefSubscribers</code>: analyses
+                that want uses of that SSA value revisited when the lattice element changes.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean">structure SparseLatticeState (Domain : Type)
+    extends AnalysisStateHeader where
+  useDefSubscribers : Array Lean.Name
+  latticeElement : Domain</code></pre>
+            </section>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-kicker">defined analyses</div>
+          <h2><code>SparseConstantPropagation</code></h2>
+          <div class="card-grid two-up">
+            <section class="info-card emphasis-card">
+              <div class="card-topline">construction</div>
+              <h3>How it plugs into the framework</h3>
+              <pre class="code-block"><code data-shiki-lang="lean">def SparseConstantPropagation : DataFlowAnalysis :=
+  SparseForwardDataFlowAnalysis.new
+    (Domain := ConstantDomain)
+    "SparseConstantPropagation"
+    SparseConstantPropagation.visitOperation
+    SparseConstantPropagation.setToEntryState</code></pre>
+            </section>
+
+            <section class="info-card compact-card">
+              <h3><code>ConstantDomain</code></h3>
+              <p>
+                Variables of <code>ConstantDomain</code> are lattice elements of the constant domain lattice with the following possible values:
+                <code>bottom</code>, <code>top</code>, or a concrete integer constant with bitwidth information.
+              </p>
+              <p>
+                Sparse constant propagation stores its facts in
+                <code>SparseLatticeState ConstantDomain</code>, meaning each SSA
+                value carries a constant-domain lattice element together with
+                the sparse dependency metadata (<code>useDefSubscribers</code>)
+                needed for use-def driven re-visitation when that SSA value's
+                lattice element changes.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean">structure KnownConstant where
+  bitwidth : Nat
+  value : Data.LLVM.Int bitwidth
+deriving BEq</code></pre>
+              <pre class="code-block"><code data-shiki-lang="lean">inductive ConstantDomain where
+  | top
+  | bottom
+  | constant (value : KnownConstant)
+deriving BEq, TypeName</code></pre>
+              <pre class="code-block"><code data-shiki-lang="lean">instance : LatticeElement ConstantDomain where
+  typeNameInst := inferInstance
+  bottom := .bottom
+  top := .top
+  join := .join
+  meet := .meet</code></pre>
+            </section>
+
+            <section class="info-card emphasis-card">
+              <div class="card-topline">visitBlock</div>
+              <h3>Block-argument propagation</h3>
+              <ul class="clean-list">
+                <li>If a block start is visited, first check whether the corresponding block is executable. If not, return.</li>
+                <li>For a non-entry block, iterate over predecessor blocks.</li>
+                <li>Skip any predecessor whose CFG edge to the current block is not live.</li>
+                <li>For each block argument, if the predecessor forwards an SSA value into that argument, add the current block-start point as a dependent of that predecessor value.</li>
+                <li>Join the predecessor value's lattice fact into the block argument's lattice state.</li>
+                <li>If incoming flow cannot be modeled precisely, set the block argument to the entry state.</li>
+              </ul>
+            </section>
+
+            <section class="info-card emphasis-card">
+              <div class="card-topline">visitOperation</div>
+              <h3>Operation transfer</h3>
+              <ul class="clean-list">
+                <li>If the operation has regions, conservatively set its results to the entry state.</li>
+                <li>If any operand is still <code>bottom</code>, do nothing yet.</li>
+                <li>If all required operands are known constants, fold.</li>
+                <li>If folding succeeds, join the constant into the SSA result lattice state.</li>
+                <li>If folding fails, set the SSA result lattice state to the entry state: <code>unknown</code> / <code>top</code>.</li>
+              </ul>
+            </section>
+
+          </div>
+        </section>
+
+        <section>
+          <div class="section-kicker">defined analyses</div>
+          <h2><code>DeadCodeAnalysis</code></h2>
+          <div class="card-grid two-up">
+            <section class="info-card emphasis-card">
+              <div class="card-topline">construction</div>
+              <h3>How it plugs into the framework</h3>
+              <pre class="code-block"><code data-shiki-lang="lean">def DeadCodeAnalysis :=
+  DataFlowAnalysis.new
+    "DeadCodeAnalysis"
+    DeadCodeAnalysis.init
+    DeadCodeAnalysis.visit</code></pre>
+            </section>
+
+            <section class="info-card compact-card">
+              <h3><code>ExecutableState</code></h3>
+              <p>
+                Marks a block entry or CFG edge live and tracks which analyses
+                should revisit the relevant block contents if executability changes.
+              </p>
+              <pre class="code-block"><code data-shiki-lang="lean">structure ExecutableState extends AnalysisStateHeader where
+  live : Bool := false
+  subscribers : Array Lean.Name := #[]
+deriving TypeName</code></pre>
+            </section>
+
+            <section class="info-card emphasis-card">
+              <div class="card-topline">init</div>
+              <h3>Initialization</h3>
+              <ul class="clean-list">
+                <li>Mark top-level region entry blocks live during initialization.</li>
+                <li>Recursively walk nested operations with control-flow semantics.</li>
+                <li>Subscribe those operations to parent-block executability.</li>
+                <li>Invoke <code>visit</code> on those operations during initialization.</li>
+              </ul>
+            </section>
+
+            <section class="info-card emphasis-card">
+              <div class="card-topline">visit</div>
+              <h3>Control-flow propagation</h3>
+              <ul class="clean-list">
+                <li>Skip the operation if its parent block is not executable.</li>
+                <li>If the operation has regions, mark their entry blocks live.</li>
+                <li>If the operation has successors and branch behavior can be resolved from sparse constant facts, mark the chosen edge live.</li>
+                <li>Otherwise, conservatively mark all successor edges live.</li>
+              </ul>
+            </section>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-kicker">limitation</div>
+          <h2>Where the framework is currently restrictive</h2>
+          <div class="callout warning-callout">
+            <p>
+              User defined analyses based off of <code>SparseForwardDataFlowAnalysis</code>
+              assume code reachability has been computed. <code>DeadCodeAnalysis</code>, in
+              turn, currently consults sparse constant propagation facts to reason precisely
+              about branches. This means that <code>SparseConstantPropagationAnalysis</code>
+              and <code>DeadCodeAnalysis</code> are effectively worthless unless run together,
+              combining into SCCP.
+            </p>
+            <p>
+              More detrimentally, this means that user defined sparse analyses will not work unless
+              both <code>SparseConstantPropagationAnalysis</code> and <code>DeadCodeAnalysis</code>
+              are registered to the same <code>fixpointSolve</code> run.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-kicker">validation</div>
+          <h2>Loop Test From <a href="https://dl.acm.org/doi/pdf/10.1145/201059.201061" target="_blank" rel="noreferrer">Combining Analyses, Combining Optimizations</a></h2>
+          <div class="card-grid two-up">
+            <section class="info-card emphasis-card">
+              <div class="card-topline">Paper pseudocode</div>
+              <pre class="code-block"><code data-shiki-lang="lean">int x₀ ← 1;
+do { x₁ ← φ(x₀, x₃);
+    b ← (x₁ ≠ 1);
+    if (b)
+        x₂ ← 2;
+    x₃ ← φ(x₁, x₂);
+} while (pred());
+return(x₃);</code></pre>
+            </section>
+
+            <section class="info-card emphasis-card">
+              <div class="card-topline">MLIR test case</div>
+              <pre class="code-block"><code data-shiki-lang="llvm">"builtin.module"() ({
+^bb0:
+  %x0 = "arith.constant"() &lt;{ value = 1 : i32 }&gt; : () -&gt; i32
+  "test.test"(%x0, %x0)[^bb1] : (i32, i32) -&gt; ()
+^bb1(%dead1 : i32, %x1 : i32):
+  %one = "arith.constant"() &lt;{ value = 1 : i32 }&gt; : () -&gt; i32
+  %b = "arith.subi"(%x1, %one) : (i32, i32) -&gt; i32
+  "test.test"(%b, %x1)[^bb2, ^bb3] : (i32, i32) -&gt; ()
+^bb2(%dead_then : i32, %x1_then : i32):
+  %x2 = "arith.constant"() &lt;{ value = 2 : i32 }&gt; : () -&gt; i32
+  "test.test"(%x2, %x2)[^bb3] : (i32, i32) -&gt; ()
+^bb3(%dead2 : i32, %x3 : i32):
+  %pred = "test.test"() : () -&gt; i32
+  "test.test"(%pred, %x3)[^bb1, ^bb4] : (i32, i32) -&gt; ()
+^bb4(%dead3 : i32, %retv : i32):
+}) : () -&gt; ()</code></pre>
+            </section>
+
+            <section class="info-card emphasis-card">
+              <div class="card-topline">Expected facts</div>
+              <p><strong>Reachability</strong></p>
+              <ul class="clean-list">
+                <li>Line 0 is reachable.</li>
+                <li>Line 1 is reachable.</li>
+                <li>Line 2 is reachable.</li>
+                <li>Line 3 is reachable.</li>
+                <li>Line 4 is unreachable.</li>
+                <li>Line 5 is reachable.</li>
+                <li>Line 6 is reachable.</li>
+                <li>Line 7 is reachable.</li>
+              </ul>
+              <p><strong>Value facts</strong></p>
+              <ul class="clean-list">
+                <li><code>x₀</code> = <code>1</code></li>
+                <li><code>x₁</code> = <code>1</code></li>
+                <li><code>b</code> = <code>0</code> (false)</li>
+                <li><code>x₂</code> = <code>bottom</code></li>
+                <li><code>x₃</code> = <code>1</code></li>
+                <li><code>pred</code> = <code>top</code></li>
+              </ul>
+            </section>
+
+            <section class="info-card emphasis-card">
+              <div class="card-topline">Observed facts</div>
+              <p><strong>Block liveness</strong></p>
+              <ul class="clean-list">
+                <li><code>bb0</code> = <code>true</code></li>
+                <li><code>bb1</code> = <code>true</code></li>
+                <li><code>bb2</code> = <code>false</code></li>
+                <li><code>bb3</code> = <code>true</code></li>
+                <li><code>bb4</code> = <code>true</code></li>
+              </ul>
+              <p><strong>Edge liveness</strong></p>
+              <ul class="clean-list">
+                <li><code>bb0</code> → <code>bb1</code> = <code>true</code></li>
+                <li><code>bb1</code> → <code>bb2</code> = <code>false</code></li>
+                <li><code>bb1</code> → <code>bb3</code> = <code>true</code></li>
+                <li><code>bb2</code> → <code>bb3</code> = <code>false</code></li>
+                <li><code>bb3</code> → <code>bb1</code> = <code>true</code></li>
+                <li><code>bb3</code> → <code>bb4</code> = <code>true</code></li>
+              </ul>
+              <p><strong>Constant facts</strong></p>
+              <ul class="clean-list">
+                <li><code>x0</code> = <code>1</code></li>
+                <li><code>x1</code> = <code>1</code></li>
+                <li><code>one</code> = <code>1</code></li>
+                <li><code>b</code> = <code>0</code></li>
+                <li><code>x2</code> = <code>bottom</code></li>
+                <li><code>x3</code> = <code>1</code></li>
+                <li><code>pred</code> = <code>unknown</code></li>
+                <li><code>retv</code> = <code>1</code></li>
+              </ul>
+            </section>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-kicker">code source</div>
+          <h2>Implementation PRs</h2>
+          <div class="card-grid two-up">
+            <section class="info-card emphasis-card">
+              <div class="card-topline">framework</div>
+              <h3>Dataflow Analysis Framework</h3>
+              <p>
+                The APIs referenced in this talk (such as the solver, analysis interfaces, lattice element inferace, etc.) is in this PR. 
+              </p>
+              <p>
+                <a href="https://github.com/opencompl/veir/pull/264" target="_blank" rel="noreferrer">
+                  View PR #264
+                </a>
+              </p>
+            </section>
+
+            <section class="info-card emphasis-card">
+              <h3>Dominance Tree</h3>
+              <p>
+                A dominance tree implementation based off the Cooper-Harvey-Kennedy algorithm is in this PR.
+              </p>
+              <p>
+                <a href="https://github.com/opencompl/veir/pull/133" target="_blank" rel="noreferrer">
+                  View PR #133
+                </a>
+              </p>
+            </section>
+          </div>
+        </section>
+      </article>
+    </main>
+
+    <div
+      id="aside-popup"
+      class="aside-popup"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="aside-popup-title"
+      hidden
+    >
+      <div class="aside-popup-kicker">inline aside</div>
+      <h3 id="aside-popup-title"></h3>
+      <div id="aside-popup-body"></div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

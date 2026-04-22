@@ -1,0 +1,19 @@
+{
+  "name": "pretext-handwritten-site-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "clean": "rm -rf dist node_modules/.vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@chenglou/pretext": "^0.0.5",
+    "shiki": "^4.0.2"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
