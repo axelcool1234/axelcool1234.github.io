@@ -11,7 +11,7 @@
 
   set text(
     size: 11pt,
-      font: "New Computer Modern",
+    font: "New Computer Modern",
   )
 
   body
@@ -52,9 +52,9 @@
 }
 
 #let edu_item(
-  name: "Sample University", 
-  degree: "B.S in Bullshit", 
-  location: "Foo, BA", 
+  name: "Sample University",
+  degree: "B.S in Bullshit",
+  location: "Foo, BA",
   date: "Aug. 1600 - May 1750",
   ..points,
 ) = {
@@ -82,21 +82,21 @@
   location: "Foo, BA",
   ..points
 ) = {
-    set block(above: 0.7em, below: 1em)
-    pad(left: 1em, right: 0.5em, box[
-      #grid(
-        columns: (3fr, 1fr),
-        align(left)[
-          *#role* \
-          _#name _
-        ],
-        align(right)[
-          #date \
-          _#location _
-        ]
-      )
-      #list(..points)
-    ])
+  set block(above: 0.7em, below: 1em)
+  pad(left: 1em, right: 0.5em, box[
+    #grid(
+      columns: (3fr, 1fr),
+      align(left)[
+        *#role* \
+        _#name _
+      ],
+      align(right)[
+        #date \
+        _#location _
+      ]
+    )
+    #list(..points)
+  ])
 }
 
 #let project_item(

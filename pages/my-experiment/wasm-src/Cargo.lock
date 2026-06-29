@@ -1,4 +1,0 @@
-# This minimal lockfile allows Nix to vendor Cargo dependencies reproducibly.
-# The crate has no dependencies; version 3 format is sufficient.
-version = 3
-package = []

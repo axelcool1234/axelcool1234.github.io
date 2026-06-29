@@ -1,5 +1,0 @@
-= Sparse Conditional Constant Propagation in Veir
-
-link:veir-sccp-demo/[Open the live demo ->]
-
-The demo itself is a small Vite app. 
