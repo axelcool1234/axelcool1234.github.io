@@ -10,27 +10,44 @@
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
       lib = pkgs.lib // import ./lib.nix { lib = pkgs.lib; };
+      postsDir = ./src/posts;
+      notesDir = ./src/notes;
+      renderCollection =
+        entriesDir: basePath:
+        lib.renderEntries {
+          inherit pkgs navbar entriesDir basePath;
+        };
+      writeWrappedPage =
+        path: title: body:
+        pkgs.writeTextDir path (
+          lib.wrapPage {
+            inherit title body navbar;
+          }
+        );
 
       # Navigation bar
-      navbar = lib.concatStringsSep "\n" (
-        [ ''<a href="/index.html">Home</a>'' ]
-        ++ map (
-          file:
-          ''<a href="/${file}">${lib.titleFromFile file}</a>''
-        ) (lib.htmlFiles ./src/nav)
-      );
+      navbar = lib.concatStringsSep "\n" [
+        ''<a href="/index.html">Home</a>''
+        ''<a href="/notes/">Notes</a>''
+      ];
 
       # Index page
       indexHtml = /* html */ ''
         ${builtins.readFile ./src/index.html}
 
         <h2 style="margin-bottom: 0;">Posts</h2>
-        <ul>
-          ${lib.concatMapStringsSep "\n" (
-            file:
-            ''<li><a href="/posts/${file}">${lib.titleFromFile file}</a></li>''
-          ) (lib.htmlFiles ./src/posts)}
-        </ul>
+        ${lib.entryListHtml {
+          entriesDir = postsDir;
+          basePath = "posts";
+        }}
+      '';
+
+      notesIndexHtml = /* html */ ''
+        <h1>Notes</h1>
+        ${lib.entryListHtml {
+          entriesDir = notesDir;
+          basePath = "notes";
+        }}
       '';
 
       # Compiled PDF
@@ -46,27 +63,14 @@
       site = pkgs.symlinkJoin {
         name = "site";
         paths =
-          (lib.renderPages {
-            inherit pkgs navbar;
-            dir = ./src/nav;
-          })
-          ++
-          (lib.renderPages {
-            inherit pkgs navbar;
-            dir = ./src/posts;
-            prefix = "posts/";
-          })
+          (renderCollection postsDir "posts")
+          ++ (renderCollection notesDir "notes")
           ++
           [
             resumePdf
             (pkgs.writeTextDir "style.css" (builtins.readFile ./src/style.css))
-            (pkgs.writeTextDir "index.html" (
-              lib.wrapPage {
-                title = "Axel Sorenson";
-                body = indexHtml;
-                inherit navbar;
-              }
-            ))
+            (writeWrappedPage "index.html" "Axel Sorenson" indexHtml)
+            (writeWrappedPage "notes/index.html" "Notes" notesIndexHtml)
             (pkgs.writeTextDir ".nojekyll" "")
           ];
       };

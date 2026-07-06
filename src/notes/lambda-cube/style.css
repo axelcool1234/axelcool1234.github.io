@@ -1,0 +1,23 @@
+.cube svg {
+  overflow: visible;
+}
+
+.cube-info dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 0.5rem;
+  row-gap: 0.25rem;
+}
+
+.cube-info dt {
+  font-weight: 700;
+}
+
+.cube-info dd {
+  margin: 0;
+}
+
+.cube-info math[display="block"] {
+  display: block;
+  margin: 0.75rem 0;
+}
