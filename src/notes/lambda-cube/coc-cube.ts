@@ -6,24 +6,16 @@ import {
   LABEL_TOP_LEFT_TIGHT,
   LABEL_TOP_RIGHT,
   mountCube,
+  themeColor,
   type Axis,
   type CubeNodeSpec,
 } from "./cube-engine.js";
-
-const BLUE = "#2b6cb0";
-const RED = "#c53030";
-const GREEN = "#2f855a";
-const GRAY = "#666";
-const DARK_GRAY = "#333";
-const PURPLE = "#6b46c1";
-const TEAL = "#2c7a7b";
-const YELLOW = "#d69e2e";
 
 // Static node definitions for Barendregt's lambda cube.
 const nodeSpecs: CubeNodeSpec[] = [
   {
     coords: [0, 0, 0],
-    color: DARK_GRAY,
+    color: themeColor("--on_surface"),
     name: "Simply Typed Lambda Calculus",
     shortName: "λ→",
     note: `
@@ -65,7 +57,7 @@ const nodeSpecs: CubeNodeSpec[] = [
   },
   {
     coords: [1, 0, 0],
-    color: RED,
+    color: themeColor("--terminal_normal_red"),
     name: "Lambda-P",
     shortName: "λP",
     note: `
@@ -107,7 +99,7 @@ const nodeSpecs: CubeNodeSpec[] = [
   },
   {
     coords: [0, 1, 0],
-    color: BLUE,
+    color: themeColor("--terminal_normal_blue"),
     name: "System F",
     shortName: "λ2",
     note: `
@@ -144,7 +136,7 @@ const nodeSpecs: CubeNodeSpec[] = [
   },
   {
     coords: [1, 1, 0],
-    color: PURPLE,
+    color: themeColor("--terminal_normal_magenta"),
     name: "λP2",
     shortName: "λP2",
     note: `
@@ -154,7 +146,7 @@ const nodeSpecs: CubeNodeSpec[] = [
   },
   {
     coords: [0, 0, 1],
-    color: GREEN,
+    color: themeColor("--terminal_normal_green"),
     name: "System Fω̲",
     shortName: "λω̲",
     note: `
@@ -166,7 +158,7 @@ const nodeSpecs: CubeNodeSpec[] = [
   },
   {
     coords: [1, 0, 1],
-    color: YELLOW,
+    color: themeColor("--terminal_normal_yellow"),
     name: "λPω",
     shortName: "λPω",
     note: `
@@ -176,7 +168,7 @@ const nodeSpecs: CubeNodeSpec[] = [
   },
   {
     coords: [0, 1, 1],
-    color: TEAL,
+    color: themeColor("--terminal_normal_cyan"),
     name: "System Fω",
     shortName: "λω",
     note: `
@@ -187,7 +179,7 @@ const nodeSpecs: CubeNodeSpec[] = [
   },
   {
     coords: [1, 1, 1],
-    color: GRAY,
+    color: themeColor("--on_surface_variant"),
     name: "Calculus of Constructions",
     shortName: "λC",
     note: `
@@ -202,7 +194,7 @@ const nodeSpecs: CubeNodeSpec[] = [
 // Static definitions for the three dependency axes of the lambda cube.
 const axes: [Axis, Axis, Axis] = [
   {
-    color: RED,
+    color: themeColor("--terminal_normal_red"),
     label: "Dependent Types",
     description:
       "This axis adds the ability for types to depend on terms. Moving in this direction introduces dependent types.",
@@ -214,7 +206,7 @@ const axes: [Axis, Axis, Axis] = [
     textOffset: AXIS_TEXT_RIGHT
   },
   {
-    color: BLUE,
+    color: themeColor("--terminal_normal_blue"),
     label: "Polymorphism",
     description:
       "This axis adds the ability for terms to depend on types. Moving in this direction introduces polymorphism.",
@@ -226,7 +218,7 @@ const axes: [Axis, Axis, Axis] = [
     textOffset: AXIS_TEXT_ABOVE
   },
   {
-    color: GREEN,
+    color: themeColor("--terminal_normal_green"),
     label: "Type Operators",
     description:
       "This axis adds the ability for types to depend on types. Moving in this direction introduces type operators.",

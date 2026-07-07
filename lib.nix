@@ -12,42 +12,21 @@ let
       (builtins.filter (name: entries.${name} == "directory"))
       (builtins.sort builtins.lessThan)
     ];
-
-  # loadPageMeta :: { dir :: path, name :: string } -> attrset
-  # dir: a page directory containing index.html and optionally default.nix.
-  # name: the default title stem, usually the page directory name.
-  # Returns page metadata with title, optional date, relative style URL lists,
-  # and script specs of the form { src :: string, module :: bool }.
-  loadPageMeta =
-    {
-      dir,
-      name,
-    }:
-    let
-      # titleFromName :: string -> string
-      # name: a dash-separated page or entry name like "lambda-cube".
-      # Returns a default title like "Lambda Cube".
-      titleFromName = name:
-        lib.concatMapStringsSep " " (
-          word:
-          let
-            head = builtins.substring 0 1 word;
-            tail = builtins.substring 1 (builtins.stringLength word - 1) word;
-          in
-          lib.toUpper head + tail
-        ) (lib.splitString "-" name);
-      # raw :: attrset
-      # Contents of default.nix when present, or {} when the page has no metadata file.
-      raw = if builtins.pathExists (dir + "/default.nix") then import (dir + "/default.nix") else { };
-    in
-    {
-      title = raw.title or (titleFromName name);
-      date = raw.date or null;
-      styles = raw.styles or [ ];
-      scripts = map (script: script // { module = script.module or false; }) (raw.scripts or [ ]);
-    };
 in
 rec {
+  # titleFromName :: string -> string
+  # name: a dash separated name like "lambda-cube".
+  # Returns a title cased string like "Lambda Cube".
+  titleFromName = name:
+    lib.concatMapStringsSep " " (
+      word:
+      let
+        head = builtins.substring 0 1 word;
+        tail = builtins.substring 1 (builtins.stringLength word - 1) word;
+      in
+      lib.toUpper head + tail
+    ) (lib.splitString "-" name);
+
   # entryListHtml :: { entriesDir :: path, basePath :: string } -> string
   # entriesDir: root directory containing entry subdirectories.
   # basePath: output collection path, like "posts" or "notes".
@@ -57,6 +36,26 @@ rec {
       entriesDir,
       basePath,
     }:
+    let
+      # loadPageMeta :: { dir :: path, name :: string } -> attrset
+      # dir: a page directory containing index.html and optionally default.nix.
+      # name: the default title stem, usually the page directory name.
+      # Returns page metadata with title and optional date.
+      loadPageMeta =
+        {
+          dir,
+          name,
+        }:
+        let
+          # raw :: attrset
+          # Contents of default.nix when present, or {} when the page has no metadata file.
+          raw = if builtins.pathExists (dir + "/default.nix") then import (dir + "/default.nix") else { };
+        in
+        {
+          title = raw.title or (titleFromName name);
+          date = raw.date or null;
+        };
+    in
     /* html */ ''
       <ul>
         ${lib.pipe (dirNames entriesDir) [
@@ -101,6 +100,7 @@ rec {
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>${title}</title>
           <link rel="stylesheet" href="${stylesheet}">
+          <link id="theme-stylesheet" rel="stylesheet" href="/themes/noctalia.css">
           ${head}
         </head>
         <body>
@@ -118,12 +118,13 @@ rec {
       </html>
     '';
 
-  # renderEntries :: { pkgs :: attrset, entriesDir :: path, basePath :: string, navbar ? string, stylesheet ? string } -> [ derivation ]
+  # renderEntries :: { pkgs :: attrset, entriesDir :: path, basePath :: string, navbar ? string, stylesheet ? string, bodyTail ? string } -> [ derivation ]
   # pkgs: nixpkgs package set, used for pkgs.writeTextDir.
   # entriesDir: root directory containing entry subdirectories.
   # basePath: output collection path, like "posts" or "notes".
   # navbar: already rendered HTML inserted inside <nav>.
   # stylesheet: site wide stylesheet URL passed through to wrapPage.
+  # bodyTail: shared HTML appended to every wrapped page body.
   # Returns wrapped and copied outputs for every top level entry in entriesDir.
   renderEntries =
     {
@@ -132,8 +133,31 @@ rec {
       basePath,
       navbar ? "",
       stylesheet ? "/style.css",
+      bodyTail ? "",
     }:
     let
+      # loadPageMeta :: { dir :: path, name :: string } -> attrset
+      # dir: a page directory containing index.html and optionally default.nix.
+      # name: the default title stem, usually the page directory name.
+      # Returns page metadata with title, optional date, relative style URL lists,
+      # and script specs of the form { src :: string, module :: bool }.
+      loadPageMeta =
+        {
+          dir,
+          name,
+        }:
+        let
+          # raw :: attrset
+          # Contents of default.nix when present, or {} when the page has no metadata file.
+          raw = if builtins.pathExists (dir + "/default.nix") then import (dir + "/default.nix") else { };
+        in
+        {
+          title = raw.title or (titleFromName name);
+          date = raw.date or null;
+          styles = raw.styles or [ ];
+          scripts = map (script: script // { module = script.module or false; }) (raw.scripts or [ ]);
+        };
+
       # nestedPageDirs :: path -> [ string ]
       # dir: a directory path whose descendants should be scanned for wrapped pages.
       # Returns sorted relative directory paths under dir that contain index.html.
@@ -292,7 +316,7 @@ rec {
             else
               "${basePath}/${entry}/${page}/";
           head = lib.concatMapStringsSep "\n" (style: ''<link rel="stylesheet" href="${style}">'') meta.styles;
-          bodyTail = lib.concatMapStringsSep "\n" (
+          pageBodyTail = lib.concatMapStringsSep "\n" (
             script:
             if script.module then
               ''<script type="module" src="${outputPath script.src}"></script>''
@@ -304,7 +328,8 @@ rec {
           wrapPage {
             title = meta.title;
             body = builtins.readFile (pageDir + "/index.html");
-            inherit navbar stylesheet head bodyTail;
+            inherit navbar stylesheet head;
+            bodyTail = lib.concatStringsSep "\n" [ pageBodyTail bodyTail ];
           }
         );
     in

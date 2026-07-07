@@ -252,16 +252,31 @@ const DEFAULT_STYLE: CubeStyle = {
   arrowLength: 12,
   arrowSpread: Math.PI / 7,
   axisDashPattern: "4 4",
-  neutralEdgeColor: "#666",
-  nodeOutlineColor: "#333",
+  neutralEdgeColor: "--outline",
+  nodeOutlineColor: "--outline",
   unnamedNodeLabel: "Unnamed Corner"
 };
+
+// Mark a color as coming from the shared theme schema.
+export function themeColor(name: string): string {
+  return name;
+}
+
+// Read a CSS custom property from the document root and fail if it is missing.
+export function cssColor(name: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  if (value === "") {
+    throw new Error(`Missing CSS color variable: ${name}`);
+  }
+
+  return value;
+}
 
 // Mount one interactive cube using the provided data and selectors.
 export function mountCube(config: CubeConfig): void {
   const geometry = { ...DEFAULT_GEOMETRY, ...config.geometry };
   const motion = { ...DEFAULT_MOTION, ...config.motion };
-  const style = { ...DEFAULT_STYLE, ...config.style };
 
   // Grab the target SVG and info panel. Browser runtime error if either selector is missing.
   const svg = document.querySelector<SVGSVGElement>(config.svgSelector);
@@ -269,6 +284,13 @@ export function mountCube(config: CubeConfig): void {
 
   if (!svg || !info) {
     throw new Error("Cube elements not found");
+  }
+
+  const style = { ...DEFAULT_STYLE, ...config.style };
+
+  // Resolve theme color tokens like "--primary" into current concrete colors.
+  function resolveColor(color: string): string {
+    return color.startsWith("--") ? cssColor(color) : color;
   }
 
   // Realized cube nodes with derived labels, geometry, and live animation state.
@@ -544,7 +566,7 @@ export function mountCube(config: CubeConfig): void {
         y: y2 + axis.textOffset.y,
         "font-size": style.labelFontSize,
         "text-anchor": axis.textOffset.anchor,
-        fill: axis.color,
+        fill: resolveColor(axis.color),
         "font-weight":
           selection.kind === "axis" && selection.index === index
             ? style.fontWeightSelected
@@ -552,7 +574,7 @@ export function mountCube(config: CubeConfig): void {
       });
 
       drawArrow(to.x, to.y, x2, y2, {
-        stroke: axis.color,
+        stroke: resolveColor(axis.color),
         "stroke-width":
           selection.kind === "axis" && selection.index === index
             ? style.selectedStrokeWidth
@@ -577,7 +599,7 @@ export function mountCube(config: CubeConfig): void {
       const to = nodes[edge.toIndex];
 
       appendLine(from.x, from.y, to.x, to.y, {
-        stroke: edge.color,
+        stroke: resolveColor(edge.color),
         "stroke-width":
           selection.kind === "axis" && selection.index === edge.axisIndex
             ? style.selectedStrokeWidth
@@ -601,7 +623,7 @@ export function mountCube(config: CubeConfig): void {
         x: node.x + node.labelOffset.x,
         y: node.y + node.labelOffset.y,
         "font-size": style.labelFontSize,
-        fill: node.color,
+        fill: resolveColor(node.color),
         "font-weight": nodeIsSelected(index) ? style.fontWeightSelected : style.fontWeightNormal
       });
 
@@ -622,8 +644,8 @@ export function mountCube(config: CubeConfig): void {
         cx: node.x,
         cy: node.y,
         r: style.nodeRadius,
-        fill: node.color,
-        stroke: style.nodeOutlineColor,
+        fill: resolveColor(node.color),
+        stroke: resolveColor(style.nodeOutlineColor),
         "stroke-width": nodeIsSelected(index) ? style.selectedStrokeWidth : style.strokeWidth
       });
 

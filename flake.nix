@@ -5,75 +5,74 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs = { self, nixpkgs, ... }:
+  outputs = { nixpkgs, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
       lib = pkgs.lib // import ./lib.nix { lib = pkgs.lib; };
-      postsDir = ./src/posts;
-      notesDir = ./src/notes;
-      renderCollection =
-        entriesDir: basePath:
-        lib.renderEntries {
-          inherit pkgs navbar entriesDir basePath;
-        };
-      writeWrappedPage =
-        path: title: body:
-        pkgs.writeTextDir path (
-          lib.wrapPage {
-            inherit title body navbar;
-          }
-        );
-
+ 
+      # Themes
+      themeNames =
+        let
+          themes = builtins.readDir ./src/themes;
+        in
+        lib.pipe themes [
+          builtins.attrNames
+          (builtins.filter (name: themes.${name} == "regular"))
+          (builtins.sort builtins.lessThan)
+        ];
+ 
+      # Placed after the body of all pages
+      bodyTail = ''<script src="/navbar.js"></script>'';
+ 
       # Navigation bar
-      navbar = lib.concatStringsSep "\n" [
-        ''<a href="/index.html">Home</a>''
-        ''<a href="/notes/">Notes</a>''
-      ];
-
-      # Index page
-      indexHtml = /* html */ ''
-        ${builtins.readFile ./src/index.html}
-
-        <h2 style="margin-bottom: 0;">Posts</h2>
-        ${lib.entryListHtml {
-          entriesDir = postsDir;
-          basePath = "posts";
-        }}
-      '';
-
-      notesIndexHtml = /* html */ ''
-        <h1>Notes</h1>
-        ${lib.entryListHtml {
-          entriesDir = notesDir;
-          basePath = "notes";
-        }}
-      '';
-
-      # Compiled PDF
-      resumePdf = pkgs.runCommand "resume-pdf" { nativeBuildInputs = [ pkgs.typst ]; } ''
-        set -euo pipefail
-        mkdir -p "$out"
-        cp ${./src/resume/resume.typ} ./resume.typ
-        cp ${./src/resume/template.typ} ./template.typ
-        typst compile ./resume.typ "$out/resume.pdf"
-      '';
+      navbar = import ./generators/navbar.nix {
+        inherit lib themeNames;
+      };
 
       # Site output (this is the static site generation in action)
-      site = pkgs.symlinkJoin {
-        name = "site";
-        paths =
-          (renderCollection postsDir "posts")
-          ++ (renderCollection notesDir "notes")
-          ++
-          [
-            resumePdf
-            (pkgs.writeTextDir "style.css" (builtins.readFile ./src/style.css))
-            (writeWrappedPage "index.html" "Axel Sorenson" indexHtml)
-            (writeWrappedPage "notes/index.html" "Notes" notesIndexHtml)
-            (pkgs.writeTextDir ".nojekyll" "")
-          ];
-      };
+      site =
+        let
+          renderCollection =
+            entriesDir: basePath:
+            lib.renderEntries {
+              inherit pkgs navbar entriesDir basePath bodyTail;
+            };
+
+          writeWrappedPage =
+            path: title: body:
+            pkgs.writeTextDir path (
+              lib.wrapPage {
+                inherit title body navbar bodyTail;
+              }
+            );
+
+          writeSourceFile = path: source: pkgs.writeTextDir path (builtins.readFile source);
+        in
+        pkgs.symlinkJoin {
+          name = "site";
+          paths =
+            # Posts
+            (renderCollection ./src/posts "posts")
+            # Notes
+            ++ (renderCollection ./src/notes "notes")
+            ++
+            [
+              # Resume
+              (import ./generators/resume-pdf.nix { inherit pkgs; })
+              # Global stylesheet
+              (writeSourceFile "style.css" ./src/style.css)
+              # Navbar behavior
+              (writeSourceFile "navbar.js" ./generators/navbar.js)
+              # Index file (home)
+              (writeWrappedPage "index.html" "Axel Sorenson" (import ./generators/index.nix { inherit lib; }))
+              # Notes list
+              (writeWrappedPage "notes/index.html" "Notes" (import ./generators/notes.nix { inherit lib; }))
+              (pkgs.writeTextDir ".nojekyll" "")
+            ]
+            # All themes
+            ++ map (name: writeSourceFile "themes/${name}" (./src/themes + "/${name}")) themeNames;
+        };
     in {
       packages.${system}.site = site;
 
