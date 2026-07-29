@@ -33,7 +33,7 @@
 #resume_heading[Experience]
 #exp_item(
   role: "Compiler Engineer Intern",
-  name: "AMD (AIG SHARKS)",
+  name: "AMD (AIG-SHARKS)",
   location: "San Jose, CA",
   date: "May 2026 - August 2026",
   [Diagnosed a defect in AMD's current and next generation pre-register-allocation schedulers for gfx1250 (MI450) GPUs that bunched LDS loads too far ahead of the WMMAs consuming them, leading to significant register spillage and causing the matrix cores to majorly stall on s_wait_dscnt instructions.],
