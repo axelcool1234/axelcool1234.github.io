@@ -13,7 +13,7 @@
 #resume_heading[Education]
 #edu_item(
   name: "University of Utah",
-  degree: "PhD in Computer Science (Compilers)",
+  degree: "PhD in Computer Science (Compilers and Formal Methods)",
   location: "Salt Lake City, UT",
   date: "August 2025 - Present",
   [*Advisor*: #link("https://users.cs.utah.edu/~regehr/")[Professor John Regehr]],
