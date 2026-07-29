@@ -27,7 +27,7 @@
   date: "September 2022 - March 2025",
   [*Cumulative GPA*: 4.0],
   [*Awards*: #link("https://uu.uci.edu/programs/deans-honor-list-reception/")[Dean's Honors List] (every quarter), #link("https://phibetakappa.uci.edu/events/pbk-book-awards-ceremony/")[Phi Beta Kappa Annual Book Award]],
-  [*Relevant Coursework*: Compiler Construction, Computer Organization, Operating Systems, Embedded Software, Data Structures and Algorithms, Information Retrieval, System Design, Database Management, Artificial Intelligence, Machine Learning, Data Mining]
+  // [*Relevant Coursework*: Compiler Construction, Computer Organization, Operating Systems, Embedded Software, Data Structures and Algorithms, Information Retrieval, System Design, Database Management, Artificial Intelligence, Machine Learning, Data Mining]
 )
 
 #resume_heading[Experience]
@@ -42,39 +42,53 @@
   [Built a containerized benchmark harness (using Docker, Make, and Python) for kernels in various configurations using AMD's simulator, auto-generating comparison tables used to iterate on the DAG mutation and further understand the defect in the AMD pre-RA schedulers.]
 )
 #exp_item(
+  role: "PhD Research Assistant",
+  name: [Formal Methods Lab with #link("https://users.cs.utah.edu/~regehr/")[Professor John Regehr]],
+  location: "Salt Lake City, UT",
+  date: "August 2025 - Present",
+  [Authored the dataflow analysis framework of #link("https://github.com/opencompl/veir")[VeIR], a work in progress verified compiler in Lean 4 pairing an MLIR-style IR with proof assistant level verification, developed with Tobias Grosser's group at the University of Cambridge and my advisor---a port of MLIR's C++ DataFlowFramework with a worklist fixpoint solver, dependency-driven fact propagation, and a sparse-fact API binding abstract values to SSA values. (#link("https://github.com/opencompl/veir/pull/264")[\#264], #link("https://github.com/opencompl/veir/pull/859")[\#859])],
+  [Designed VeIR's abstract-domain interface as a Lean typeclass carrying its own proof obligations---no domain registers until its bounded-join-semilattice laws and the monotonicity of its concretization map are machine-checked---and instantiated it for constant propagation and liveness. (#link("https://github.com/opencompl/veir/pull/666")[\#666], #link("https://github.com/opencompl/veir/pull/856")[\#856])],
+  [Implemented VeIR's dominance analysis---an iterative Cooper--Harvey--Kennedy immediate-dominator solver on that worklist, with block- and operation-level dominance queries over nested regions---and its dataflow-based dead-code analysis. Sole author of all three modules the library exports as its analysis namespace, across 16 merged pull requests (+3,127/-496 lines). (#link("https://github.com/opencompl/veir/pull/133")[\#133], #link("https://github.com/opencompl/veir/pull/721")[\#721], #link("https://github.com/opencompl/veir/pull/659")[\#659])],
+  [Built the extraction harness producing the evaluation corpus for the lab's StableHLO semantics formalization: 121 torchvision models across 21 image and 42 video shapes through two export paths (JAX, torch-xla). (#link("https://github.com/axelcool1234/StableHLO-Extracter")[repo])],
+  [Prototyped #link("https://github.com/axelcool1234/L2")[L2], a loop language with a from-scratch IC3/property-directed-reachability invariant prover over Z3, evaluated on 35 matched safe/unsafe benchmarks under lit and FileCheck---groundwork toward translation validation of unbounded loops, which Alive2 currently handles by bounded unrolling.]
+)
+#exp_item(
   role: "LLVM Open Source Contributor",
   name: "llvm-project (Open Source)",
   location: "Remote",
   date: "November 2024 - Present",
-  [Implemented an extension point in the PassBuilder pipeline enabling developers to insert and run custom passes immediately after vectorization, increasing flexibility for downstream compiler projects. (#link("https://github.com/llvm/llvm-project/commit/d3161defd6b717241a85b6ca528754c747060735")[\#123494])],
-  [Ported a funnel shift combiner from SelectionDAG to GlobalISel, improving codegen efficiency and reducing instruction counts on backends using GlobalISel. (#link("https://github.com/llvm/llvm-project/commit/c249a9ab62df716e1c7aa553bc2477233d07bc15")[\#135132])],
-  [Ported a rotate transformation from SelectionDAG to InstCombine, enabling the optimization to run earlier in the compiler pipeline. This improves codegen for projects such as LuaJIT and wasmtime-rs. (#link("https://github.com/llvm/llvm-project/commit/dee28f955583c5baa69ece5bf499a447cf3c6d29")[\#160628])]
+  [Implemented an extension point in the PassBuilder pipeline enabling developers to insert and run custom passes immediately after vectorization; it is now used upstream to register AMDGPU's InferAddressSpacesPass. (#link("https://github.com/llvm/llvm-project/pull/123494")[\#123494])],
+  [Ported a funnel shift combiner from SelectionDAG to GlobalISel as declarative TableGen, cutting a canonical AArch64 GlobalISel case from 9 instructions to 7. (#link("https://github.com/llvm/llvm-project/pull/135132")[\#135132])],
+  [Ported a rotate transformation from SelectionDAG to InstCombine, enabling the optimization to run earlier in the compiler pipeline and reducing emitted IR across LLVM's real-world optimization benchmark corpus. (#link("https://github.com/llvm/llvm-project/pull/160628")[\#160628])]
 )
+// Previous PhD Research Assistant entry, superseded by the VeIR-focused block above.
+/*
 #exp_item(
   role: "PhD Research Assistant",
   name: [Formal Methods Lab with #link("https://users.cs.utah.edu/~regehr/")[Professor John Regehr]],
   location: "Salt Lake City, UT",
   date: "August 2025 - Present",
   [Formalizing the semantics of StableHLO to enable verified compiler optimizations across Torch, JAX, and TensorFlow. Gathered hundreds of megabytes of StableHLO for evaluation of the defined semantics. (#link("https://github.com/axelcool1234/StableHLO-Extracter")[repo])],
-  [Investigating program cut points and loop invariant inference to scale Alive2 verification to larger programs and unbounded loops, extending the reach of formal methods to real‑world workloads. (#link("https://github.com/axelcool1234/L2")[repo])],
+  [Investigating program cut points and loop invariant inference to scale Alive2 verification to larger programs and unbounded loops, extending the reach of formal methods to real-world workloads. (#link("https://github.com/axelcool1234/L2")[repo])],
   [Exploring memory model research to expand the breadth of programs Alive2 can employ translation validation on.]
 )
+*/
 #exp_item(
   role: "Undergraduate Research Assistant",
   name: [#link("https://ssllab.org/")[Secure Systems and Software Laboratory] at University of California, Irvine],
   location: "Irvine, CA",
   date: "August 2024 - March 2025",
-  [Collaborated with #link("https://www.michaelfranz.com/")[Professor Michael Franz] on maintenance, enhancement, and documentation of a state‑of‑the‑art binary lifter for translating machine code into LLVM IR.],
-  [Studied pointer provenance, memory models, and aliasing rules to guide enhancements to the lifter and ensure alignment with LLVM internals.]
+  [Helped document a binary lifter translating machine code into LLVM IR with #link("https://www.michaelfranz.com/")[Professor Michael Franz], learning pointer provenance, memory models, and aliasing rules to keep the lifter aligned with LLVM internals.],
+  // [Studied pointer provenance, memory models, and aliasing rules to guide enhancements to the lifter and ensure alignment with LLVM internals.]
 )
 #exp_item(
   role: "Academic Intern",
   name: "University of California, Irvine",
   location: "Irvine, CA",
   date: "March 2023 - March 2025",
-  [Improved the efficiency of grading by \~300% by developing automated grading tools handling 400+ weekly student assignments for UCI's lower‑division Intermediate Programming course.],
+  [Developed automated grading tools handling 400+ weekly student submissions for UCI's lower-division Intermediate Programming course.],
   [Refined students' programming skills by providing constructive feedback to hundreds of students on programming assignments and projects.],
-  [Collaborated with the course instructor to ensure consistency in handling the grade rubric and providing feedback to students in order to facilitate a more standardized and fair grading process.]
+  // [Collaborated with the course instructor to ensure consistency in handling the grade rubric and providing feedback to students in order to facilitate a more standardized and fair grading process.]
 )
 
 #resume_heading("Projects")
@@ -82,7 +96,7 @@
   name: [Compiler With x86 ELF Binary Generation (#link("https://github.com/axelcool1234/Tiny-Compiler")[repo])],
   skills: "C++, x86 Assembly",
   date: "March 2024 - June 2024",
-  [Constructed an optimizing compiler for a language 721% faster than Python supporting signed integer arithmetic, I/O, structured control flow, and user-defined functions.],
+  [Constructed an optimizing compiler supporting signed integer arithmetic, I/O, structured control flow, and user-defined functions, running a benchmark that calculates the Mandelbrot set \~8x faster than the equivalent CPython program.],
   [Implemented lexer, LL(1) recursive-descent parser, SSA IR with several optimizations, register allocator, assembly code generator, and ELF bytecode assembler.],
   [Designed and integrated a Graphviz-based visualizer for the SSA IR to present optimized control flow diagrams.]
 )
@@ -90,19 +104,19 @@
   name: [Lambda Calculus Interpreter (#link("https://github.com/axelcool1234/Lambda-Calculus-Interpreter")[repo])],
   skills: "Prolog",
   date: "August 2025",
-  [Implemented a full lambda calculus interpreter: tokenization, parsing, pretty‑printing, and evaluation to normal form (normal-order beta-reduction).],
-  [Built robust substitution with alpha-conversion and free-variable analysis to prevent variable capture.],
-  [Added macros and parameterized macros enabling concise encoding of higher‑order functions and Church numerals.],
-  [Implemented alpha-equivalence checking to resugar results back into macro form, improving readability.]
+  [Implemented a full lambda calculus interpreter: tokenization, parsing, pretty-printing, and evaluation to normal form (normal-order beta-reduction), with capture-avoiding substitution via alpha-conversion and free-variable analysis.],
+  [Added macros and parameterized macros for encoding higher-order functions and Church numerals, plus alpha-equivalence checking to resugar results back into macro form.],
 )
 #project_item(
   name: "Search Engine and Web Crawler",
   skills: "Python",
   date: "October 2023 - December 2023",
-  [Developed a polite web crawler adhering to robots.txt and sitemap protocols with a team of three.],
-  [Increased crawling speed \~4x by implementing a runtime thread pool for multithreaded crawling.],
-  [Achieved \~200x speedup in indexing via optimized partial binary indexing for memory-efficient concurrent indexing (40k+ pages).],
-  [Built a simple front-end with integrated ChatGPT functionality; improved ranking via TF-IDF and cosine similarity.]
+  [Developed a polite web crawler adhering to robots.txt and sitemap protocols with a team of three, using a runtime thread pool for multithreaded crawling.],
+  [Built partial binary indexing for memory-efficient concurrent indexing over 40k+ pages, with a front-end ranking results via TF-IDF and cosine similarity.],
+  // Folded above; the ~4x and ~200x multipliers had no committed benchmark.
+  // [Increased crawling speed \~4x by implementing a runtime thread pool for multithreaded crawling.],
+  // [Achieved \~200x speedup in indexing via optimized partial binary indexing for memory-efficient concurrent indexing (40k+ pages).],
+  // [Built a simple front-end with integrated ChatGPT functionality; improved ranking via TF-IDF and cosine similarity.]
 )
 /*
 #project_item(
@@ -114,6 +128,7 @@
   [Added modular test suite architecture with automated memory/register state tracking and convention checks.]
 )
 */
+/*
 #project_item(
   name: "Canvas Autograder",
   skills: "Python",
@@ -122,7 +137,7 @@
   [Implemented secure/effective testing: AST filtering, unit tests, and time/memory limits to prevent infinite loops.],
   [Designed API-based grading pipeline using Canvas API to update grades/comments programmatically, bypassing slow SpeedGrader UI.]
 )
-// Commented out to keep the resume at two pages.
+*/
 /*
 #project_item(
   name: "Movie Ratings Classification AI Models",
@@ -138,11 +153,11 @@
 #resume_heading("Technical Skills")
 #skill_item(
   category: "Languages",
-  skills: "C, C++, Rust, Python, Nix, Bash, Nushell, Prolog, Lean, Haskell, SQL, LaTeX, Typst"
+  skills: "C, C++, Rust, Lean 4, Python, Nix, Bash, Nushell, Prolog, Haskell, SQL, LaTeX, Typst"
 )
 #skill_item(
-  category: "Frameworks/Libraries/DB",
-  skills: "LLVM, MLIR, Triton, Alive2, Z3, SQLite, MySQL, PostgreSQL, Couchbase, Neo4j, Spark, MongoDB, Cassandra"
+  category: "Frameworks/Libraries",
+  skills: "LLVM, MLIR, Triton, Alive2, Z3"
 )
 #skill_item(
   category: "Developer Tools",
