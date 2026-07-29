@@ -37,7 +37,7 @@
   location: "San Jose, CA",
   date: "May 2026 - August 2026",
   [Diagnosed a defect in AMD's current and next-generation pre-register-allocation schedulers for gfx1250 (MI450) GPUs that bunched LDS loads too far ahead of the WMMAs consuming them, leading to significant register spillage and causing the matrix cores to majorly stall on s_wait_dscnt instructions.],
-  [Implemented a ScheduleDAGMutation in LLVM's AMDGPU backend adding DAG edges confining each LDS load to a window determined from a statically calculated live VGPR histogram. (#link("https://github.com/llvm/llvm-project/pull/203095")[LLVM PR \#203095]\; an internal version of this PR is under review for merging)],
+  [Implemented a ScheduleDAGMutation in LLVM's AMDGPU backend adding DAG edges confining each LDS load to a window determined from a statically calculated live VGPR histogram. (#link("https://github.com/llvm/llvm-project/pull/203095")[\#203095]\; an internal version of this PR is under review for merging).],
   [On AMD's cycle-accurate simulator, raised matrix-core utilization from 2.5% to 40.1% on the worst-affected mxfp8 GEMM, cutting its VGPR spills from 805 to 16 and its average stall on s_wait_dscnt instructions from 594 to 44 cycles per loop iteration; additionally lifted an fp16 GEMM from 77.8% to 86.2% matrix-core utilization. Peak register usage fell on all kernels tested.],
   [Built a containerized benchmark harness (using Docker, Make, and Python) for kernels in various configurations using AMD's simulator, auto-generating comparison tables used to iterate on the DAG mutation and further understand the defect in the AMD pre-RA schedulers.]
 )
