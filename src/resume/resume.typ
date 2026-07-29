@@ -161,5 +161,5 @@
 )
 #skill_item(
   category: "Developer Tools",
-  skills: "Linux, Git, Nix, Docker, CMake"
+  skills: "Linux, Git, Jujutsu, Nix, Docker, CMake"
 )
