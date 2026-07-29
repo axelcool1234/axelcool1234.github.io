@@ -32,6 +32,16 @@
 
 #resume_heading[Experience]
 #exp_item(
+  role: "Compiler Engineer Intern",
+  name: "AMD (AIG SHARKS)",
+  location: "San Jose, CA",
+  date: "May 2026 - August 2026",
+  [Diagnosed a defect in AMD's current and next-generation pre-register-allocation schedulers for gfx1250 (MI450) GPUs that bunched LDS ds_loads far ahead of the WMMAs consuming them, leading to significant register spillage and causing the matrix cores to majorly stall on s_wait_dscnt instructions.],
+  [Implemented a ScheduleDAGMutation in LLVM's AMDGPU backend adding artificial SDep edges confining each ds_load to a window ending at its first consuming WMMA, sized from a statically calculated live-VGPR histogram. (#link("https://github.com/llvm/llvm-project/pull/203095")[LLVM PR \#203095]\; an internal version is under review for merge on AMD's branch)],
+  [On AMD's cycle-accurate simulator, raised matrix-core utilization from 2.5% to 40.1% on the worst-affected mxfp8 GEMM, cutting its VGPR spills from 805 to 16 and its average stall on s_wait_dscnt instructions from 594 to 44 cycles per loop iteration; additionally lifted an fp16 GEMM from 77.8% to 86.2% matrix-core utilization. Peak register usage fell on all kernels tested.],
+  [Built a containerized benchmark harness (Docker, Make, Python) for kernels in various configurations using AMD's simulator, auto-generating comparison tables used to improve the DAG mutation and further understand the defect in the AMD pre-RA schedulers.]
+)
+#exp_item(
   role: "LLVM Open Source Contributor",
   name: "llvm-project (Open Source)",
   location: "Remote",
@@ -94,6 +104,7 @@
   [Achieved \~200x speedup in indexing via optimized partial binary indexing for memory-efficient concurrent indexing (40k+ pages).],
   [Built a simple front-end with integrated ChatGPT functionality; improved ranking via TF-IDF and cosine similarity.]
 )
+/*
 #project_item(
   name: "Multithreaded Assembly Unittesting Library",
   skills: "Python, Assembly",
@@ -102,6 +113,7 @@
   [Implemented parallel test execution to reduce runtime using Python threading.],
   [Added modular test suite architecture with automated memory/register state tracking and convention checks.]
 )
+*/
 #project_item(
   name: "Canvas Autograder",
   skills: "Python",
@@ -110,6 +122,8 @@
   [Implemented secure/effective testing: AST filtering, unit tests, and time/memory limits to prevent infinite loops.],
   [Designed API-based grading pipeline using Canvas API to update grades/comments programmatically, bypassing slow SpeedGrader UI.]
 )
+// Commented out to keep the resume at two pages.
+/*
 #project_item(
   name: "Movie Ratings Classification AI Models",
   skills: "Python",
@@ -119,6 +133,7 @@
   [Performed hyperparameter tuning and anti-overfitting strategies to balance accuracy and generalizability.],
   [Evaluated ensembles: stacking and gradient boosting to further improve classification.]
 )
+*/
 
 #resume_heading("Technical Skills")
 #skill_item(
@@ -127,9 +142,9 @@
 )
 #skill_item(
   category: "Frameworks/Libraries/DB",
-  skills: "LLVM, MLIR, Alive2, Z3, SQLite, MySQL, PostgreSQL, Couchbase, Neo4j, Spark, MongoDB, Cassandra"
+  skills: "LLVM, MLIR, Triton, Alive2, Z3, SQLite, MySQL, PostgreSQL, Couchbase, Neo4j, Spark, MongoDB, Cassandra"
 )
 #skill_item(
   category: "Developer Tools",
-  skills: "Linux, Git, Nix"
+  skills: "Linux, Git, Nix, Docker, CMake"
 )
