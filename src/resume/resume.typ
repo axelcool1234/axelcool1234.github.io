@@ -18,7 +18,7 @@
   date: "August 2025 - Present",
   [*Advisor*: #link("https://users.cs.utah.edu/~regehr/")[Professor John Regehr]],
   [*Lab*: Formal Methods Lab],
-  [*Relevant Coursework*: Testing and Verification of Digital Circuits, Advanced Operating System Implementation]
+  [*Relevant Coursework*: Advanced Compiler Implementation, Software Verification, Programming Language Semantics, Testing and Verification of Digital Circuits, Advanced Operating System Implementation]
 )
 #edu_item(
   name: "University of California, Irvine",
@@ -27,7 +27,7 @@
   date: "September 2022 - March 2025",
   [*Cumulative GPA*: 4.0],
   [*Awards*: #link("https://uu.uci.edu/programs/deans-honor-list-reception/")[Dean's Honors List] (every quarter), #link("https://phibetakappa.uci.edu/events/pbk-book-awards-ceremony/")[Phi Beta Kappa Annual Book Award]],
-  [*Relevant Coursework*: Database Management, Computer Organization, Data Structures and Algorithms, Information Retrieval, System Design, Compiler Construction, Artificial Intelligence, Machine Learning, Data Mining, Operating Systems, Embedded Software]
+  [*Relevant Coursework*: Compiler Construction, Computer Organization, Operating Systems, Embedded Software, Data Structures and Algorithms, Information Retrieval, System Design, Database Management, Artificial Intelligence, Machine Learning, Data Mining]
 )
 
 #resume_heading[Experience]
