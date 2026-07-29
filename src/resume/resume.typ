@@ -59,7 +59,7 @@
   date: "November 2024 - Present",
   [Implemented an extension point in the PassBuilder pipeline enabling developers to insert and run custom passes immediately after vectorization; it is now used upstream to register AMDGPU's InferAddressSpacesPass. (#link("https://github.com/llvm/llvm-project/pull/123494")[\#123494])],
   [Ported a funnel shift combiner from SelectionDAG to GlobalISel as declarative TableGen, cutting a canonical AArch64 GlobalISel case from 9 instructions to 7. (#link("https://github.com/llvm/llvm-project/pull/135132")[\#135132])],
-  [Ported a rotate transformation from SelectionDAG to InstCombine, giving the fold a middle-end equivalent so chained rotates collapse earlier in the pipeline; #link("https://github.com/dtcxzyw/llvm-opt-benchmark/pull/2866")[benchmarked] across seven real-world codebases including LuaJIT, wasmtime-rs, and ffmpeg, with instruction-count reductions and no regressions. (#link("https://github.com/llvm/llvm-project/pull/160628")[\#160628])]
+  [Ported a rotate transformation from SelectionDAG to InstCombine, giving the fold a middle-end equivalent so chained rotates collapse earlier in the pipeline; #link("https://github.com/dtcxzyw/llvm-opt-benchmark/pull/2866")[benchmarked] across seven real world codebases including LuaJIT, wasmtime-rs, and ffmpeg, with instruction count reductions and no regressions. (#link("https://github.com/llvm/llvm-project/pull/160628")[\#160628])]
 )
 // Previous PhD Research Assistant entry, superseded by the VeIR-focused block above.
 /*
