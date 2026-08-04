@@ -273,7 +273,7 @@ rec {
           supportFiles,
         }:
         pkgs.runCommand "site-ts-assets-${builtins.replaceStrings [ "/" "." ] [ "-" "-" ] entry}" {
-          nativeBuildInputs = [ pkgs.nodePackages.typescript ];
+          nativeBuildInputs = [ pkgs.typescript ];
         } ''
           set -euo pipefail
           mkdir source out "$out"

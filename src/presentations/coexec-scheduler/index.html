@@ -4,67 +4,22 @@
   A talk given to the maintainers of AMD's <code>CoExecScheduler</code>, arguing that
   <code>ds_load</code> bunching on gfx1250 WMMA GEMMs is a <em>relational</em> constraint — each
   load belongs inside a window defined by the WMMAs that consume it — and so belongs in a DAG
-  mutation rather than in the scheduler's pairwise comparator. Every figure is generated from the
-  scheduler's own debug output; nothing here is hand-drawn.
+  mutation rather than in the scheduler's pairwise comparator.
 </p>
 
-<div class="deck" id="deck">
-  <div class="deck-stage">
-    <figure class="slide" data-title="How CoExecScheduler picks the next instruction">
-      <video src="media/readyqueue.mp4" poster="media/readyqueue-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="CoExecScheduler (No Mutation) on a real kernel">
-      <video src="media/tooearly.mp4" poster="media/tooearly-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="The four DAG edits the mutation makes">
-      <video src="media/dagedits.mp4" poster="media/dagedits-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="CoExecScheduler (With Mutation) on a real kernel">
-      <video src="media/dagedges.mp4" poster="media/dagedges-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="f16_bm256_bk256 — calculating each load fragment's window">
-      <video src="media/budget-f16.mp4" poster="media/budget-f16-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="mxfp_gemm_canonical_32t — calculating each load fragment's window">
-      <video src="media/budget-canonical.mp4" poster="media/budget-canonical-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="f16_bm256_bk256 — ds_load fragment live ranges">
-      <video src="media/lifelines-f16.mp4" poster="media/lifelines-f16-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="mxfp_gemm_canonical_32t — ds_load fragment live ranges">
-      <video src="media/lifelines-canonical.mp4" poster="media/lifelines-canonical-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="LDS wait stall — where the waiting is concentrated">
-      <video src="media/drains.mp4" poster="media/drains-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-    <figure class="slide" data-title="Additional stats">
-      <video src="media/results.mp4" poster="media/results-still.png"
-             preload="none" playsinline muted controls></video>
-    </figure>
-  </div>
+<p class="deck-lead">
+  Every frame is generated from source at build time: the animations are
+  <a href="https://www.manim.community/">manim</a> scenes, the charts are matplotlib, and both read
+  ~76&nbsp;KB of JSON distilled from the scheduler's own debug output. Nothing in the deck is drawn
+  by hand, and no video is stored in this repository.
+</p>
 
-  <div class="deck-bar">
-    <button type="button" class="deck-btn" data-act="prev" aria-label="Previous slide">&larr;</button>
-    <span class="deck-count"><span class="deck-n">1</span> / <span class="deck-total">10</span></span>
-    <span class="deck-title"></span>
-    <button type="button" class="deck-btn" data-act="overview">Overview</button>
-    <button type="button" class="deck-btn" data-act="fullscreen">Fullscreen</button>
-    <button type="button" class="deck-btn" data-act="next" aria-label="Next slide">&rarr;</button>
-  </div>
-
-  <div class="deck-overview" hidden></div>
+<div class="deck-frame">
+  <iframe src="deck.html" title="CoExec scheduler slide deck"
+          allow="fullscreen" loading="lazy"></iframe>
 </div>
 
 <p class="deck-help">
-  Arrow keys or <kbd>Space</kbd> to move, <kbd>O</kbd> for the overview, <kbd>F</kbd> for
-  fullscreen. Each slide autoplays on arrival; the videos are silent, so scrub freely.
+  Arrow keys move between slides; <kbd>F</kbd> is fullscreen and <kbd>Esc</kbd> shows the overview.
+  If the embed is cramped, <a href="deck.html">open the deck on its own</a>.
 </p>

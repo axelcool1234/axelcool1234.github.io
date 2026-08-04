@@ -1,4 +1,4 @@
-"""VIDEO 2 (the problem): loads issued far ahead of anything that reads them.
+"""SLIDE-DECK build (manim-slides) of VIDEO 2 (the problem): loads issued far ahead of anything that reads them.
 
 Every number is real: the fragments, their consumers, their VGPR widths and the
 WMMA index each was issued at all come from sched_data.py, which extract-anim-data.py
@@ -16,10 +16,15 @@ let time pass -- SchedBoundary::pickOnlyChoice does it 128 times in this region:
 but that path is gated on the queue being EMPTY, and a function that compares two
 candidates has no way to empty it.
 
-Render:
+Render (click-through deck):
+  manim-slides render -qm <this file> TooEarlySlides
+  manim-slides convert --to=pptx TooEarlySlides deck.pptx
+
+Original video build:
   manim -qm --format=gif anim_tooearly.py TooEarly
 """
 from manim import *
+from manim_slides import Slide
 from sched_common import *
 import sched_data
 
@@ -43,7 +48,7 @@ def live_vgprs(issued, now):
     return sum(f["vgprs"] for f in issued if f["cmin"] > now)
 
 
-class TooEarly(Scene):
+class TooEarlySlides(Slide):
     def ctr_to(self, ctr, value):
         return Transform(ctr, Text(str(value), font_size=30,
                                    color=HOT).move_to(ctr))
@@ -91,6 +96,7 @@ class TooEarly(Scene):
         ctr = Text("0", font_size=30, color=DIM).next_to(ctr_lab, DOWN, buff=0.12)
         self.play(FadeIn(ctr_lab), FadeIn(ctr))
 
+        self.next_slide()
         # loads start issuing now, so retire the standing caption
         self.play(FadeOut(none_w), run_time=0.3)
 
@@ -117,6 +123,7 @@ class TooEarly(Scene):
         self.play(FadeIn(gap))
         self.wait(1.2)
 
+        self.next_slide()
         self.play(FadeOut(qlab), FadeOut(gap), FadeOut(comp),
                   FadeOut(ctext), run_time=0.5)
         code = Text("while (Available.empty())\n    bumpCycle();",

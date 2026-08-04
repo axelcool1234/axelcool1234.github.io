@@ -1,32 +1,45 @@
-# Renders every figure in the CoExec deck from source, at site build time.
+# Builds the CoExec slide deck from source, at site build time.
 #
-# The alternative was committing ~20 MB of MP4/GIF/PNG into a repo whose entire
-# history is 1.4 MB. Instead src/figures/coexec/ holds the manim scenes, the
-# matplotlib scripts, and ~76 KB of JSON distilled from the scheduler debug logs
-# (which are 237 MB and could never live here), and this derivation turns them
-# into video.
+# The alternative was committing ~20 MB of MP4 into a repo whose entire history
+# is 1.4 MB. Instead src/figures/coexec/ holds the manim scenes, the matplotlib
+# scripts, and ~76 KB of JSON distilled from the scheduler debug logs (which are
+# 237 MB and could never live here), and this derivation turns them into a deck.
 #
 # It also sidesteps a limitation of the page generator: lib.renderEntries copies
 # entry assets with `writeTextDir (readFile ...)`, and readFile refuses binary
 # files outright. Media produced by a derivation lands in $out directly and never
-# goes near readFile, which is why the figures are built rather than checked in.
+# goes near readFile, which is why the deck is built rather than checked in.
 { pkgs }:
 let
-  # matplotlib and manim ship their own interpreters; call each explicitly rather
-  # than relying on whichever python wins on PATH.
-  py = pkgs.python3.withPackages (p: [ p.matplotlib p.numpy p.pillow ]);
+  # manim-slides pulls in rtoml, whose Rust extension segfaults running its OWN
+  # pytest suite under CPython 3.14. The package is fine -- only the test run
+  # crashes -- so skip it. (Using python3.12 instead is not an option: its manim
+  # fails to build on svgelements, so neither interpreter has both packages.)
+  python = pkgs.python3.override {
+    packageOverrides = _: prev: {
+      rtoml = prev.rtoml.overridePythonAttrs (_: { doCheck = false; });
+    };
+  };
 
-  # scene file : manim class : output basename
-  scenes = [
-    { file = "anim_readyqueue.py"; scene = "ReadyQueue"; name = "readyqueue"; }
-    { file = "anim_tooearly.py"; scene = "TooEarly"; name = "tooearly"; }
-    { file = "anim_dagedits.py"; scene = "DagEdits"; name = "dagedits"; }
-    { file = "anim_dagedges.py"; scene = "DagEdges"; name = "dagedges"; }
-  ];
+  py = python.withPackages (p: [
+    p.manim
+    p.manim-slides
+    p.matplotlib
+    p.numpy
+    p.pillow
+  ]);
 
-  # Each script writes <name>-still.png next to the video, which becomes the
-  # <video poster>. They disagree on how the output path is passed: the two that
-  # can also draw a static chart take it after --animate, the rest after -o.
+  # reveal.js, pinned rather than loaded from jsDelivr at view time: the deck
+  # should not make third-party requests, and a build must not depend on a CDN
+  # still being up. manim-slides' cdn_url option is pointed at this copy below.
+  revealjs = pkgs.fetchzip {
+    url = "https://registry.npmjs.org/reveal.js/-/reveal.js-6.0.1.tgz";
+    hash = "sha256-xvpqmoEJEDbP824mei5Ggyx6oy6YKvqhA+/bNH0ODpU=";
+  };
+
+  # Matplotlib figures, rendered before the scenes that embed them. They disagree
+  # on how the output path is passed: the two that can also draw a static chart
+  # take it after --animate, the rest after -o.
   plots = [
     { script = "plot-budget.py"; args = "--data budget-f16.json"; out = "-o"; name = "budget-f16"; }
     { script = "plot-budget.py"; args = "--data budget-canonical.json"; out = "-o"; name = "budget-canonical"; }
@@ -36,25 +49,52 @@ let
     { script = "plot-results.py"; args = ""; out = "-o"; name = "results"; }
   ];
 
-  renderScenes = pkgs.lib.concatMapStringsSep "\n" (s: ''
-    manim -qm --media_dir ./media ${s.file} ${s.scene}
-    cp ./media/videos/${pkgs.lib.removeSuffix ".py" s.file}/720p30/${s.scene}.mp4 \
-       "$media/${s.name}.mp4"
-    # manim scenes have no still of their own. Frame 0 is pure black -- every
-    # scene opens by fading its title in -- so seek a third of the way in, where
-    # the layout is assembled, and use that as the poster.
-    dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$media/${s.name}.mp4")
-    ffmpeg -loglevel error -y -ss "$(awk "BEGIN{printf \"%.3f\", $dur*0.35}")" \
-      -i "$media/${s.name}.mp4" -frames:v 1 "$media/${s.name}-still.png"
-  '') scenes;
+  # Deck order. The budget derivation sits between the four DAG edits and the
+  # animation that follows, because that animation displays the W[] gates the
+  # budget produces -- they arrive unexplained otherwise.
+  sceneOrder = [
+    { file = "slides_readyqueue.py"; scene = "ReadyQueueSlides"; }
+    { file = "slides_tooearly.py"; scene = "TooEarlySlides"; }
+    { file = "slides_dagedits.py"; scene = "DagEditsSlides"; }
+    { file = "figures_slides.py"; scene = "BudgetSlides"; }
+    { file = "slides_dagedges.py"; scene = "DagEdgesSlides"; }
+    { file = "figures_slides.py"; scene = "ResultSlides"; }
+  ];
 
   renderPlots = pkgs.lib.concatMapStringsSep "\n" (p: ''
-    ${py}/bin/python3 ${p.script} ${p.args} --dark ${p.out} "$media/${p.name}.mp4"
+    python3 ${p.script} ${p.args} --dark ${p.out} "fig/${p.name}.mp4"
   '') plots;
+
+  renderScenes = pkgs.lib.concatMapStringsSep "\n" (s: ''
+    manim-slides render -qm --media_dir ./media ${s.file} ${s.scene}
+  '') sceneOrder;
+
+  # A missing asset shows up in the browser only as a slide that will not
+  # advance, and a remote one silently reintroduces a CDN dependency, so check
+  # for both. HTML comments are stripped first: the template ships several
+  # optional hooks (index.css, index.js, lib/css/zenburn.css) commented out, and
+  # those are not references.
+  checkDeck = pkgs.writeText "check-deck.py" ''
+    import pathlib, re, sys
+
+    dest = pathlib.Path(sys.argv[1])
+    html = re.sub(r"<!--.*?-->", "", (dest / "deck.html").read_text(), flags=re.S)
+    refs = sorted(set(re.findall(r'(?:src|href)="([^"]+)"', html)))
+    remote = [r for r in refs if r.startswith(("http://", "https://", "//"))]
+    missing = [r for r in refs if r not in remote and not (dest / r).exists()]
+    for label, bad in (("remote", remote), ("missing", missing)):
+        for r in bad:
+            print("ERROR: " + label + " asset: " + r, file=sys.stderr)
+    if remote or missing:
+        sys.exit(1)
+    print("deck: " + str(len(refs)) + " local references, all resolve, none remote")
+  '';
+
+  sceneList = pkgs.lib.concatMapStringsSep " " (s: s.scene) sceneOrder;
 in
 pkgs.runCommand "coexec-figures"
 {
-  nativeBuildInputs = [ pkgs.manim pkgs.ffmpeg pkgs.fontconfig pkgs.dejavu_fonts py ];
+  nativeBuildInputs = [ py pkgs.ffmpeg pkgs.fontconfig pkgs.dejavu_fonts ];
 } ''
   set -euo pipefail
 
@@ -81,11 +121,29 @@ pkgs.runCommand "coexec-figures"
   export FIGURE_DATA=$PWD/data
   export PYTHONPATH=$PWD
 
-  media="$out/presentations/coexec-scheduler/media"
-  mkdir -p "$media"
-
-  ${renderScenes}
+  mkdir -p fig
   ${renderPlots}
+  ${renderScenes}
 
-  echo "rendered $(ls "$media"/*.mp4 | wc -l) videos, $(ls "$media"/*.png | wc -l) posters"
+  dest="$out/presentations/coexec-scheduler"
+  mkdir -p "$dest"
+
+  # cdn_url is relative to the deck, so the generated HTML asks for
+  # reveal/dist/... next to itself instead of reaching for jsDelivr.
+  manim-slides convert --to=html ${sceneList} "$dest/deck.html" \
+    -ccdn_url=reveal -ccontrols=true -cprogress=true
+  # Copy only the reveal assets the generated deck actually asks for. The npm
+  # package is 6 MB, almost all of it themes we do not use; the five referenced
+  # files embed their fonts as data URIs, so they stand alone. Driven off the
+  # deck itself, so it stays correct if the template ever references more.
+  grep -oE '(src|href)="reveal/[^"]+"' "$dest/deck.html" \
+    | sed -E 's/.*"reveal\/([^"]+)"/\1/' | sort -u | while read -r rel; do
+      mkdir -p "$dest/reveal/$(dirname "$rel")"
+      cp "${revealjs}/$rel" "$dest/reveal/$rel"
+    done
+
+  python3 ${checkDeck} "$dest"
+
+  slides=$(grep -c "<section" "$dest/deck.html" || true)
+  echo "deck.html: $slides sections, $(du -sh "$dest" | cut -f1) total"
 ''

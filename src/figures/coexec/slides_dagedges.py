@@ -1,4 +1,4 @@
-"""VIDEO 3 (the fix): the DAG edge gates eligibility, so the clock advances.
+"""SLIDE-DECK build (manim-slides) of VIDEO 3 (the fix): the DAG edge gates eligibility, so the clock advances.
 
 Deliberately the SAME frame as anim_tooearly.py -- same timeline, same queue, same
 comparator, same counter -- so played after the dag-edges slide it reads as one
@@ -9,10 +9,15 @@ other or with lifelines-canonical.png.
 Note how tightly the edges bind: each fragment issues one WMMA slot after its
 budget floor.
 
-Render:
+Render (click-through deck):
+  manim-slides render -qm <this file> DagEdgesSlides
+  manim-slides convert --to=pptx DagEdgesSlides deck.pptx
+
+Original video build:
   manim -qm --format=gif anim_dagedges.py DagEdges
 """
 from manim import *
+from manim_slides import Slide
 from sched_common import *
 import sched_data
 
@@ -36,7 +41,14 @@ def live_vgprs(issued, now):
     return sum(f["vgprs"] for f in issued if f["cmin"] > now)
 
 
-class DagEdges(Scene):
+# The single clock advance that FREES registers: by then some fragments have been
+# read, so the counter falls instead of rising. That beat gets its own slide.
+DROP_ROW = next(r for r in range(1, len(FR))
+                if live_vgprs(FR[:r], FR[r]["issue_on"])
+                < live_vgprs(FR[:r], FR[r - 1]["issue_on"]))
+
+
+class DagEdgesSlides(Slide):
     def ctr_to(self, ctr, value):
         return Transform(ctr, Text(str(value), font_size=30,
                                    color=HOT).move_to(ctr))
@@ -104,6 +116,7 @@ class DagEdges(Scene):
         self.play(Create(box), FadeIn(code), FadeIn(reach))
         self.wait(0.7)
 
+        self.next_slide()
         def set_loop(color):
             """The bumpCycle loop only runs while Available is EMPTY, so gray the
             whole statement out for as long as anything in the queue is eligible."""
@@ -126,8 +139,12 @@ class DagEdges(Scene):
         issued = []
         for gi, rows in enumerate(groups):
             w = FR[rows[0]]["issue_on"]
+            if rows[0] == DROP_ROW:
+                self.next_slide()          # end the run of issues before the drop
             self.move_now(marker, w, run_time=0.6 if gi == 0 else 0.4, ctr=ctr,
                           value=live_vgprs(issued, w))
+            if rows[0] == DROP_ROW:
+                self.next_slide()          # the clock move alone: 66 -> 34
             # every fragment gated on this W[] becomes eligible together, and
             # the loop stops applying the moment the first of them does
             self.play(*[a for r in rows for a in (
@@ -152,6 +169,7 @@ class DagEdges(Scene):
             # queue drained again -> the loop is back in force
             self.play(*set_loop(OK), run_time=0.25)
 
+        self.next_slide()
         self.play(FadeOut(qlab), FadeOut(comp), FadeOut(ctext),
                   FadeOut(grp), FadeOut(reach), run_time=0.5)
         ghosts = VGroup(*[

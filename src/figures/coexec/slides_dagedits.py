@@ -1,4 +1,4 @@
-"""The SOLUTION slide, animated: the four DAG edits, made one at a time.
+"""SLIDE-DECK build (manim-slides) of the SOLUTION slide: the four DAG edits, made one at a time.
 
 Animated counterpart to dag-edges-dark.excalidraw. Showing them arrive in order
 matters: the schedulable WINDOW around L1 does not exist until the last edit
@@ -9,10 +9,14 @@ add an edge. Move [2] rewrites the latency of an ds_load -> consumer data edge
 that is already in the DAG (SDep::setLatency), so that edge is drawn faint from
 the start and is thickened rather than created.
 
-Render:
+Render (click-through deck):
+  manim-slides render -qm <this file> DagEditsSlides
+
+Original video build:
   manim -qm --format=gif anim_dagedits.py DagEdits
 """
 from manim import *
+from manim_slides import Slide
 from sched_common import MONO, TITLE, DIM
 
 config.background_color = "#000000"
@@ -50,7 +54,7 @@ def edge(a, b, color, width=3.2, dash=False):
                  tip_length=0.18)
 
 
-class DagEdits(Scene):
+class DagEditsSlides(Slide):
     def construct(self):
         title = Text("The four DAG edits the mutation makes", font_size=30,
                      color=TITLE).to_edge(UP, buff=0.22)
@@ -128,5 +132,5 @@ class DagEdits(Scene):
         self.wait(1.6)
 
     def next_beat(self):
-        """Slide boundary in the deck build; a no-op in the video build."""
-        pass
+        """One click per DAG edit."""
+        self.next_slide()

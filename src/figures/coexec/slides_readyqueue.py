@@ -1,4 +1,4 @@
-"""The PROBLEM slide: how CoExec picks, and why it cannot decline.
+"""SLIDE-DECK build (manim-slides) of: the PROBLEM slide - how CoExec picks, and why it cannot decline.
 
 Mirrors AMDGPUCoExecSchedStrategy::pickNodeFromQueue exactly:
 
@@ -23,10 +23,15 @@ returns at the first one that discriminates. That is why `Stall` (near the top)
 decided 83 of 83 early loads while RegMax (#13) never fired once, and it is why
 the highlight below stops at a rung instead of running the whole list.
 
-Render:
+Render (click-through deck):
+  manim-slides render -qm <this file> ReadyQueueSlides
+  manim-slides convert --to=pptx ReadyQueueSlides deck.pptx
+
+Original video build:
   manim -qm --format=gif anim_readyqueue.py ReadyQueue
 """
 from manim import *
+from manim_slides import Slide
 
 config.background_color = "#000000"
 MONO = "DejaVu Sans Mono"
@@ -80,7 +85,7 @@ def op_block(kind, w=1.5, h=0.44):
     return VGroup(r, t)
 
 
-class ReadyQueue(Scene):
+class ReadyQueueSlides(Slide):
     def construct(self):
         title = Text("How CoExecScheduler picks the next instruction", font_size=30,
                      color=TITLE).to_edge(UP, buff=0.22)
@@ -139,6 +144,7 @@ class ReadyQueue(Scene):
             if rest:
                 self.play(*[b.animate.shift(UP * (-pitch)) for b in rest], run_time=0.3)
 
+        self.next_slide()
         # ---- round 0: FirstValid, no comparison ------------------------
         champ = blocks[0]
         self.play(champ.animate.move_to(champ_slot), run_time=0.6)
@@ -149,7 +155,8 @@ class ReadyQueue(Scene):
         self.wait(0.7)
         self.play(FadeOut(cap))
 
-        # ---- rounds 1..N -----------------------------------------------
+        # ---- rounds 1..N (same slide: FirstValid is the first round, not a
+        # ---- separate idea) --------------------------------------------
         for idx, rung, chall_wins in ROUNDS:
             chall = blocks[idx]
             self.play(chall.animate.move_to(chall_slot), run_time=0.45)
