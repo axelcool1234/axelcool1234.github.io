@@ -2,10 +2,6 @@
  * the page itself: the generator owns index.html for every entry, and going
  * through it is what keeps the navbar and the theme picker on this page. */
 
-.deck-lead {
-  max-width: 70ch;
-}
-
 .deck-frame {
   margin: 1.5rem 0;
   border: 1px solid var(--outline);

@@ -1,6 +1,6 @@
 <h1>MI450 WMMA and <code>ds_load</code> Scheduling via a DAG mutation</h1>
 
-<p class="deck-lead">
+<p>
   The following talk was given at the end of my internship at AMD. A pain point many GPU kernel developers
   deal with is the very complex instruction schedulers in LLVM failing to make certain critical decisions
   that ultimately decide whether a kernel is sufficiently fast. Such decisions are (but not limited to): 
@@ -10,7 +10,7 @@
   and scheduling loads sufficiently close to their consumers so that a register isn't occupied but unused.
 </p>
 
-<p class="deck-lead">
+<p>
   Failure to successfully make these decisions can lead to absolutely terrible slowdowns due to spills from
   high register pressure and stalls waiting on loads to finish. The following presentation goes over my 
   solution to address these problems for AMD's CoExecScheduler in LLVM.
