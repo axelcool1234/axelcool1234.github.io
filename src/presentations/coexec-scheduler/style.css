@@ -1,0 +1,150 @@
+/* The CoExec deck.
+ *
+ * The figures are rendered on a black background (they were built for a black
+ * slide), so the stage stays black in every theme rather than trying to follow
+ * the page -- a light theme with black videos floating on it looks like a bug.
+ * Everything around the stage uses the theme variables. */
+
+.deck-lead {
+  max-width: 70ch;
+}
+
+.deck {
+  margin: 1.5rem 0;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface_variant);
+}
+
+.deck-stage {
+  position: relative;
+  background: #000;
+  aspect-ratio: 16 / 9;
+}
+
+.slide {
+  display: none;
+  margin: 0;
+  height: 100%;
+}
+
+.slide.is-current {
+  display: block;
+}
+
+.slide video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* Fullscreen: the stage should fill the screen, and the bar ride along the
+ * bottom rather than being clipped away with the rest of the page. */
+.deck:fullscreen {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+}
+
+.deck:fullscreen .deck-stage {
+  flex: 1 1 auto;
+  aspect-ratio: auto;
+  min-height: 0;
+}
+
+.deck-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-top: 1px solid var(--outline);
+  background: var(--surface);
+}
+
+.deck-btn {
+  font: inherit;
+  color: var(--on_surface);
+  background: var(--surface_variant);
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+}
+
+.deck-btn:hover {
+  background: var(--hover);
+  color: var(--on_hover);
+}
+
+.deck-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--on_surface_variant);
+}
+
+/* Takes the slack so the two right-hand buttons sit against the edge. */
+.deck-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--on_surface_variant);
+}
+
+.deck-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.7rem;
+  padding: 0.8rem;
+  border-top: 1px solid var(--outline);
+  background: var(--surface);
+}
+
+.deck-thumb {
+  font: inherit;
+  text-align: left;
+  color: var(--on_surface);
+  background: none;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  padding: 0.4rem;
+  cursor: pointer;
+}
+
+.deck-thumb:hover {
+  border-color: var(--primary);
+}
+
+.deck-thumb img {
+  display: block;
+  width: 100%;
+  border-radius: 4px;
+  background: #000;
+}
+
+.deck-thumb span {
+  display: block;
+  padding-top: 0.35rem;
+  font-size: 0.85em;
+  color: var(--on_surface_variant);
+}
+
+.deck-help {
+  font-size: 0.9em;
+  color: var(--on_surface_variant);
+}
+
+.deck-help kbd {
+  border: 1px solid var(--outline);
+  border-radius: 4px;
+  padding: 0 0.3em;
+}
+
+@media (max-width: 600px) {
+  .deck-title { display: none; }
+}

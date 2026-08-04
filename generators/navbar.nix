@@ -12,6 +12,7 @@ in
   <div class="nav-links">
     <a href="/index.html">Home</a>
     <a href="/notes/">Notes</a>
+    <a href="/presentations/">Presentations</a>
   </div>
 
   <div class="nav-controls">

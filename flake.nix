@@ -56,6 +56,8 @@
             (renderCollection ./src/posts "posts")
             # Notes
             ++ (renderCollection ./src/notes "notes")
+            # Presentations
+            ++ (renderCollection ./src/presentations "presentations")
             ++
             [
               # Resume
@@ -68,13 +70,24 @@
               (writeWrappedPage "index.html" "Axel Sorenson" (import ./generators/index.nix { inherit lib; }))
               # Notes list
               (writeWrappedPage "notes/index.html" "Notes" (import ./generators/notes.nix { inherit lib; }))
+              # Presentations list
+              (writeWrappedPage "presentations/index.html" "Presentations" (
+                import ./generators/presentations.nix { inherit lib; }
+              ))
+              # Figures for the CoExec deck, rendered from source at build time
+              (import ./generators/coexec-figures.nix { inherit pkgs; })
               (pkgs.writeTextDir ".nojekyll" "")
             ]
             # All themes
             ++ map (name: writeSourceFile "themes/${name}" (./src/themes + "/${name}")) themeNames;
         };
     in {
-      packages.${system}.site = site;
+      packages.${system} = {
+        inherit site;
+        # Buildable on its own so the ~7 min figure render can be iterated on
+        # without rebuilding the whole site.
+        figures = import ./generators/coexec-figures.nix { inherit pkgs; };
+      };
 
       apps.${system} = {
         default = {
