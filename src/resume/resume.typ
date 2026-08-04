@@ -15,7 +15,7 @@
   name: "University of Utah",
   degree: "PhD in Computer Science (Compilers and Formal Methods)",
   location: "Salt Lake City, UT",
-  date: "August 2025 - Present",
+  date: "August 2025 - May 2030",
   [*Advisor*: #link("https://users.cs.utah.edu/~regehr/")[Professor John Regehr]],
   [*Lab*: Formal Methods Lab],
   [*Relevant Coursework*: Advanced Compiler Implementation, Software Verification, Programming Language Semantics, Testing and Verification of Digital Circuits, Advanced Operating System Implementation]
