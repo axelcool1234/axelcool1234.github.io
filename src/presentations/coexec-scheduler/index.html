@@ -1,17 +1,19 @@
-<h1>Scheduling <code>ds_load</code> with a DAG mutation</h1>
+<h1>MI450 WMMA and <code>ds_load</code> Scheduling via a DAG mutation</h1>
 
 <p class="deck-lead">
-  A talk given to the maintainers of AMD's <code>CoExecScheduler</code>, arguing that
-  <code>ds_load</code> bunching on gfx1250 WMMA GEMMs is a <em>relational</em> constraint — each
-  load belongs inside a window defined by the WMMAs that consume it — and so belongs in a DAG
-  mutation rather than in the scheduler's pairwise comparator.
+  The following talk was given at the end of my internship at AMD. A pain point many GPU kernel developers
+  deal with is the very complex instruction schedulers in LLVM failing to make certain critical decisions
+  that ultimately decide whether a kernel is sufficiently fast. Such decisions are (but not limited to): 
+  scheduling load instructions further away from its first consumer then the load's latency (so it's ready
+  in time), scheduling loads alongside matrix multiplication instructions so their latency is hidden,
+  scheduling load instructions sufficiently away from each other to prevent overwhelming the LDS bus,
+  and scheduling loads sufficiently close to their consumers so that a register isn't occupied but unused.
 </p>
 
 <p class="deck-lead">
-  Every frame is generated from source at build time: the animations are
-  <a href="https://www.manim.community/">manim</a> scenes, the charts are matplotlib, and both read
-  ~76&nbsp;KB of JSON distilled from the scheduler's own debug output. Nothing in the deck is drawn
-  by hand, and no video is stored in this repository.
+  Failure to successfully make these decisions can lead to absolutely terrible slowdowns due to spills from
+  high register pressure and stalls waiting on loads to finish. The following presentation goes over my 
+  solution to address these problems for AMD's CoExecScheduler in LLVM.
 </p>
 
 <div class="deck-frame">
@@ -21,5 +23,5 @@
 
 <p class="deck-help">
   Arrow keys move between slides; <kbd>F</kbd> is fullscreen and <kbd>Esc</kbd> shows the overview.
-  If the embed is cramped, <a href="deck.html">open the deck on its own</a>.
+  You can also <a href="deck.html">open the deck on its own</a>.
 </p>
