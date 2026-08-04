@@ -21,18 +21,32 @@ FIG = Path("fig")
 
 
 class _FromFiles(Slide):
-    """One slide per file, in order. Subclasses just list the files."""
+    """Two slides per figure: the static chart, then the same chart animating.
+
+    The pause matters. Each of these figures is a before/after morph, and landing
+    on it mid-flight gives you no chance to read the "before". So the still goes
+    up first and the animation runs on the next keypress -- you talk over the
+    static chart, then advance and let it move.
+
+    Advancing cannot jump, because the still is frame 0 of the video: plot-*.py
+    writes <name>-still.png from the same figure it then animates.
+
+    manim-slides picks the slide type from the file's mimetype, so a .png becomes
+    an image slide and a .mp4 a video slide; nothing else is needed.
+    """
 
     files: list[str] = []
 
     def construct(self):
         for name in self.files:
-            path = FIG / name
-            if not path.exists():
-                # Fail loudly: a missing figure would otherwise just be a slide
-                # that silently is not there.
-                raise FileNotFoundError(f"{path} -- render the plots first")
-            self.next_slide(src=path)
+            video = FIG / name
+            still = video.with_name(f"{video.stem}-still.png")
+            for path in (still, video):
+                if not path.exists():
+                    # Fail loudly: a missing figure would otherwise just be a
+                    # slide that silently is not there.
+                    raise FileNotFoundError(f"{path} -- render the plots first")
+                self.next_slide(src=path)
 
 
 class BudgetSlides(_FromFiles):
