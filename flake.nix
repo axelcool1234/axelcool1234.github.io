@@ -77,9 +77,17 @@
               # Figures for the CoExec deck, rendered from source at build time
               (import ./generators/coexec-figures.nix { inherit pkgs; })
               (pkgs.writeTextDir ".nojekyll" "")
-            ]
-            # All themes
-            ++ map (name: writeSourceFile "themes/${name}" (./src/themes + "/${name}")) themeNames;
+              # All 66 themes in ONE derivation. They used to be one writeTextDir
+              # each, and writeTextDir sets allowSubstitutes = false: Nix rebuilds
+              # such paths every time rather than fetching them, so CI rebuilt all
+              # 66 on every run and the cache dutifully re-uploaded them -- to a
+              # cache that, by that same flag, would never be read from. Copying
+              # the directory once is substitutable and is a single store path.
+              (pkgs.runCommand "themes" { } ''
+                mkdir -p "$out/themes"
+                cp ${./src/themes}/*.css "$out/themes/"
+              '')
+            ];
         };
     in {
       packages.${system} = {
