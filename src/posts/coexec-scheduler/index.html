@@ -77,64 +77,70 @@ The widget below shows how <code>pickNodeFromQueue</code> runs. One pass is made
         <h4>tryCandidateCoexec</h4>
         <ol class="rq-ladder">
           <li><button type="button">biasPhysReg</button>
-            <div class="rq-doc">Fires on physreg copies and move immediates. 
-              <strong>Why it is top priority</strong>: physical registers are special. Unlike virtual registers, the allocator cannot split or spill them, so a physreg's live range should be kept as short as possible.
+            <div class="rq-doc">
+                Fires on physreg copies and move immediates. <strong>Why it is top priority</strong>: physical registers are special. Unlike virtual registers, the allocator cannot split or spill them, so a physreg's live range should be kept as short as possible.
             </div>
           </li>
 
           <li><button type="button">tryPressure (RegExcess)</button>
-            <div class="rq-doc"> "Excess" specifically concerns itself with whether an instruction raises the register pressure beyond the limit. It is considered neutral if it raises (or lowers) the pressure but it is (or was) below the limit. For the following, assume I am referring to decrease/increase in relation to a register pressure set that is beyond the limit. If one decreases pressure and the other doesn't, take the one that decreases. If both increase the same register pressure set, prefer the smaller increase. If they increase different register pressure sets, rank by how critical each set is (<code>getRegPressureSetScore</code>) and prefer the one affecting the less critical register pressure set. <strong>Why it is #2</strong>: Spilling / dropping occupancy is one of the most expensive things a schedule can do. It is paramount that we avoid this if we can.
+            <div class="rq-doc"> 
+                "Excess" specifically concerns itself with whether an instruction raises the register pressure beyond the limit. It is considered neutral if it raises (or lowers) the pressure but it is (or was) below the limit. For the following, assume I am referring to decrease/increase in relation to a register pressure set that is beyond the limit. If one decreases pressure and the other doesn't, take the one that decreases. If both increase the same register pressure set, prefer the smaller increase. If they increase different register pressure sets, rank by how critical each set is (<code>getRegPressureSetScore</code>) and prefer the one affecting the less critical register pressure set. <strong>Why it is #2</strong>: Spilling / dropping occupancy is one of the most expensive things a schedule can do. It is paramount that we avoid this if we can.
             </div>
           </li>
 
           <li><button type="button">tryEffectiveStall</button>
-            <div class="rq-doc">Computes, per candidate, the stall cycles it would incur if issued
-              at the current cycle plus the co-execution slots it would waste, and prefers the
-              lower. <strong>This is a large part of why the bunching happens.</strong> A
-              <code>ds_load</code> whose address is ready costs ~0 stall. A WMMA consuming a
-              recently-issued load must wait the full load latency before its operands land, costing
-              a large stall. So the scheduler keeps taking the cheap loads and deferring the
-              expensive WMMAs, cycle after cycle. It is meant to hide latency — but nothing
-              counterbalances the register pressure that front-loading creates: RegExcess above is
-              blind to the cumulative pile-up, and RegMax below is too low to override it.</div></li>
+              <div class="rq-doc">
+                  Computes, per candidate, the stall cycles it would incur if issued at the current cycle plus the co-execution slots it would waste, and prefers the lower. The stall cost is dominated by how long until the candidate's inputs are actually ready (its <code>TopReadyCycle</code> minus the current cycle), which is itself set by the latencies on its incoming DAG edges. 
+            </div>
+          </li>
 
           <li><button type="button">tryMemoryPipeline</button>
-            <div class="rq-doc">Prefers DMA (async global→LDS tensor copies) or fence ops that can
-              issue with zero stall, to keep the memory pipeline moving. Not relevant to
-              <code>ds_load</code> bunching.</div></li>
+              <div class="rq-doc">
+                  Prefers DMA (async global->LDS tensor copies) or fence ops that can be scheduled with zero stall, to keep the memory pipeline moving.
+              </div>
+          </li>
 
           <li><button type="button">tryCoexecSlot</button>
-            <div class="rq-doc">Only fires when a multi-cycle op is in flight, exposing a
-              co-execution window. By this point <code>tryEffectiveStall</code> has already run, so
-              both candidates have equal stall cycles and would land in the same slot; the decision
-              is purely which instruction fits that slot better. It prefers candidates whose type is
-              not <em>avoided</em> at the slot, and among those, whose type is
-              <em>preferred</em>.</div></li>
+            <div class="rq-doc">
+                Only fires when a multi-cycle op is in flight, which exposes a co-execution window. By this point <code>tryEffectiveStall</code> has already run, so both candidates have equal stall cycles and would land in the same slot so the decision is purely on which instruction fits that slot better. It prefers candidates whose type is not avoided at that slot, and among those, whose type is preferred.
+            </div>
+          </li>
 
           <li><button type="button">tryShadowMix</button>
-            <div class="rq-doc">Looks at what the current shadow needs. If unsatisfied, prefer
-              instructions the window still needs; if satisfied, prefer ops that open a new
-              co-execution window (like WMMAs).</div></li>
+            <div class="rq-doc">
+                Looks at what the current shadow needs. If it is unsatisfied, prefer instructions the window still needs. If it is satisfied, prefer ops that open a new co-execution window (like WMMAs).
+            </div>
+          </li>
 
           <li><button type="button">tryCriticalResource / Dep / Prio</button>
-            <div class="rq-doc">Tries to keep hardware units busy, ranked by how important each unit
-              is.</div></li>
+            <div class="rq-doc">
+                Tries to keep hardware units busy, ranked by how important each unit is.
+            </div>
+          </li>
 
           <li><button type="button">Clustering / getWeakLeft</button>
-            <div class="rq-doc">Keeps clustered memory operations together.</div></li>
+            <div class="rq-doc">
+                Keeps clustered memory operations together.
+            </div>
+          </li>
 
           <li><button type="button">tryPressure (RegMax)</button>
-            <div class="rq-doc">Concerned with preventing <em>peak</em> register pressure from
-              rising. Note how low priority this is — by the time the cascade could reach it, the
-              stall heuristic has almost always already decided.</div></li>
+            <div class="rq-doc">
+                Concerned with preventing <em>peak</em> register pressure from rising. 
+            </div>
+          </li>
 
           <li><button type="button">tryLatency</button>
-            <div class="rq-doc">Prefers candidates with high DAG height, i.e. long chains of
-              latency. Much like <code>tryEffectiveStall</code>, this leads to
-              <code>ds_load</code>s being heavily preferred.</div></li>
+            <div class="rq-doc">
+                Prefers candidates with high DAG height, i.e. long chains of latency.
+            </div>
+          </li>
 
           <li><button type="button">NodeOrder</button>
-            <div class="rq-doc">Prefer original program order.</div></li>
+            <div class="rq-doc">
+                Prefer original program order.
+            </div>
+          </li>
         </ol>
       </div>
 
@@ -146,7 +152,6 @@ The widget below shows how <code>pickNodeFromQueue</code> runs. One pass is made
     <button type="button" data-act="play">Play</button>
     <button type="button" data-act="step">Step</button>
     <button type="button" data-act="reset">Reset</button>
-    <button type="button" data-act="motion" aria-pressed="true">Motion: on</button>
     <span class="rq-progress"></span>
   </div>
 
