@@ -25,6 +25,12 @@ const HEAD_SPREAD = Math.PI / 7;
 const GAP = 2;
 const NODE_R = 6;
 
+// The window bracket, in the empty column left of the ds_loads (the manim
+// scene puts it one box-gap out from theirs, at BRX).
+const BRACKET_X = 46;
+const BRACKET_ARM = 14;
+const WINDOW_EDIT = 3;   // the budget edit, the one that creates the window
+
 interface DagNode {
   id: string;
   label: string;
@@ -53,7 +59,7 @@ const EDITS = [
     key: "space",
     arrow: "ds_load → ds_load",
     what: "added: LDS bus spacing",
-    body: `Chains the loads in order of their earliest consumer, with a latency equal to the LDS bus reciprocal throughput. Without it the loads may be correctly placed but still issued back to back, which saturates the LDS bus and makes the kernel memory bound instead of compute bound.`,
+    body: `Chains the loads in order of their earliest consumer, with a latency equal to the LDS bus reciprocal throughput. Without it, the loads may be correctly placed but still issued back to back, which saturates the LDS bus and makes the kernel memory bound instead of compute bound.`,
   },
   {
     key: "lat",
@@ -197,6 +203,35 @@ if (root) {
       const t = el("text", { x: n.x, y: n.y + 4, "text-anchor": "middle" });
       t.textContent = n.label;
       g.appendChild(t);
+      svg.appendChild(g);
+    }
+
+    // L1's window: W0 is the earliest WMMA the budget lets L1 follow, W2 the
+    // first that reads it, and the bracket is the gap between them that L1 has
+    // to be issued in. Left of the loads rather than around them, so it marks
+    // the range without appearing to enclose L2 -- gen_dag_edges.py's reason.
+    //
+    // The manim scene gives this its own beat after the fourth edit, since the
+    // window does not exist until the budget edge lands; the static figure just
+    // draws it. Here it follows the selection like everything else, and is only
+    // at full strength for the edit that creates it.
+    {
+      const on = selected === -1 || selected === WINDOW_EDIT;
+      const top = byId.get("W0")!, bot = byId.get("W2")!;
+      const g = el("g", { class: `de-window${on ? "" : " is-dim"}` });
+      g.appendChild(el("line", { x1: BRACKET_X, y1: top.y, x2: BRACKET_X, y2: bot.y }));
+      for (const y of [top.y, bot.y]) {
+        g.appendChild(el("line", { x1: BRACKET_X, y1: y, x2: BRACKET_X + BRACKET_ARM, y2: y }));
+      }
+      const mid = BRACKET_X + BRACKET_ARM / 2;
+      for (const [dy, cls, text] of [
+        [-17, "de-wtitle", "L1's window"],
+        [-5, "de-wsub", "(W0 → W2)"],
+      ] as [number, string, string][]) {
+        const t = el("text", { x: mid, y: top.y + dy, "text-anchor": "middle", class: cls });
+        t.textContent = text;
+        g.appendChild(t);
+      }
       svg.appendChild(g);
     }
   }

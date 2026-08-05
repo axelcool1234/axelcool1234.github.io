@@ -557,6 +557,14 @@
 .de-e2 line { stroke: var(--on_surface_variant); }
 .de-e3 line { stroke: var(--error); }
 
+/* L1's window: the bracket from the end of the manim scene, in the same colour
+   as the budget edge that creates it. */
+.de-window line { stroke: var(--error); stroke-width: 2; stroke-linecap: round; }
+.de-window.is-dim { opacity: 0.22; }
+.de-window text { font-family: monospace; }
+.de-wtitle { font-size: 12px; fill: var(--error); }
+.de-wsub { font-size: 10px; fill: var(--on_surface_variant); }
+
 .de-legend {
   list-style: none;
   margin: 0;
