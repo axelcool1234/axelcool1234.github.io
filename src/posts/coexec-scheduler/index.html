@@ -154,27 +154,10 @@ The widget below shows how <code>pickNodeFromQueue</code> runs. One pass is made
     <button type="button" data-act="reset">Reset</button>
     <span class="rq-progress"></span>
   </div>
-
-  <figcaption>
-    A pass over the ready queue. Which rung lights up is drawn from the real reason histogram:
-    <code>Stall</code> and <code>CritResourceDep</code> dominate, <code>CritResource</code> is third,
-    and <code>CoexecSlot</code> fires occasionally.
-  </figcaption>
 </figure>
 
 <h3>The issue with this scheduler</h3>
 
 <p>
-  This scheduler is greedy, like other schedulers. Whenever an instruction is available to be
-  scheduled, an instruction <em>will</em> be scheduled. The problem is that there are moments when
-  the only available instructions are <code>ds_load</code>s that will not be consumed for a long
-  time. No amount of tie-breaking can prevent that, because
-  <strong>CoExec has no way to reject every available instruction and schedule nothing instead</strong>.
-  So the loads go out far too early, simply because the scheduler ran out of anything else that
-  could win.
-</p>
-
-<p>
-  That is the gap the DAG mutation fills — not by adding another heuristic, but by removing those
-  loads from the queue until the point where issuing them is actually reasonable.
+This scheduler is greedy, like other schedulers. Whenever an instruction is available to be scheduled, an instruction <em>will</em> be scheduled. The problem is that there are moments when the only available instructions are <code>ds_load</code>s that will not be consumed for a very long time. None of the heuristics can help with this, because CoExec has no way to reject every available instruction and schedule nothing instead. Consequently, the loads are scheduled far too early, simply because the scheduler ran out of anything else that could (and most often would) win.
 </p>
