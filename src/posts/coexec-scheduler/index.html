@@ -254,20 +254,16 @@ The DAG mutation runs after the dependency DAG is built but before <code>tryCand
   <div class="de-info"></div>
 </figure>
 
-<h3>Calculating each load fragment's window</h3>
+<h3>How the DAG mutation calculates each load fragment's window</h3>
 
 <p>
-The fourth edit needs a number: the earliest WMMA a given load is allowed to follow. A mutation with a tuned constant in it is one a reviewer can reject on principle, so it is worth being precise about where that number comes from &mdash; and it is not tuned. It is measured, from the DAG, per kernel.
-</p>
-
-<p>
-Start from the <em>as late as possible</em> schedule, where every fragment is issued immediately before the WMMA that first reads it. That is the lowest register pressure any legal schedule of these loads can have, and it is also useless on its own: a load issued right before its consumer hides none of its own latency. Its peak live-VGPR count is the ceiling. Each fragment is then pulled back as early as it can go without that peak rising, and where it stops is the number in its edge.
+The DAG mutation starts with every load fragment's window being as short and as late as possible while still having the load finish by the time its earliest consumer reads it. Based off this schedule, a live VGPR histogram is calculated, with its peak serving as the VGPR "budget" limit. Using this budget, the windows are eased earlier until it can't without violating the budget. This is to give the CoExecScheduler breathing room to make good scheduling decisions, while preventing it from scheduling the loads too early.
 </p>
 
 <figure class="bw" id="bw">
   <p class="bw-status"></p>
   <svg class="bw-svg" viewBox="0 0 680 362" role="img"
-       aria-label="Two panels sharing a WMMA axis: one bar per ds_load fragment showing where it is issued and when it is read, above the live VGPR histogram those bars produce, with the budget ceiling drawn across it"></svg>
+       aria-label="Two panels sharing a WMMA axis: one bar per ds_load fragment showing where it is issued and when it is read, above the live VGPR histogram those bars produce, with the budget limit drawn across it"></svg>
   <p class="bw-sub"></p>
   <ul class="bw-legend">
     <li><span class="bw-key bw-kheld"></span>held live but not yet read</li>
