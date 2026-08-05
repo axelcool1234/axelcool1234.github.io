@@ -19,5 +19,9 @@
       src = "./budget.ts";
       module = true;
     }
+    {
+      src = "./dagrun.ts";
+      module = true;
+    }
   ];
 }

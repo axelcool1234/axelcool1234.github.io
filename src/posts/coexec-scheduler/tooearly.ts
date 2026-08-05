@@ -7,25 +7,17 @@
 // -debug-only=machine-scheduler run on that kernel, so the bars on the timeline
 // are where the scheduler actually put those loads.
 //
-// The point the figure has to land: each fragment issues around W[33-43] and is
-// not read until W[88-101], so it sits in a register for ~55 WMMAs doing
-// nothing. Not because the scheduler chose badly between two candidates -- it is
-// the only thing in the queue.
+// The point the figure has to land: each fragment issues far ahead of anything
+// that reads it, so it sits in a register doing nothing for dozens of WMMAs.
+// Not because the scheduler chose badly between two candidates -- it is the
+// only thing in the queue.
+//
+// The frame (data, controls, pacing) lives in schedrun.ts, shared with the
+// with-mutation widget further down; what is here is only what this run does.
 
-import { fadeIn, fadeOut, flip, indicate, play, wait, smooth,
-         beginSkip, endSkip } from "./anim.js";
-
-interface Frag {
-  vgprs: number;
-  cmin: number;
-  cmax: number;
-  floor: number;
-  issue_off: number;
-  issue_on: number;
-}
-
-// Vertical pitch of one timeline bar, in px.
-const ROW_PITCH = 14;
+import { fadeIn, fadeOut, flip, indicate, play, smooth } from "./anim.js";
+import { Frag, RunData, RunLoop, ROW_PITCH, DENSE_ABOVE, kernelSwitcher,
+         speedFor } from "./schedrun.js";
 
 const root = document.getElementById("te");
 if (root) {
@@ -37,21 +29,13 @@ if (root) {
   const none = q<HTMLElement>(".te-none");
   const nowLine = q<HTMLElement>(".te-now");
   const counter = q<HTMLElement>(".te-count-value");
-  const progress = q<HTMLElement>(".te-progress");
   const caption = q<HTMLElement>("figcaption");
-  const playBtn = q<HTMLButtonElement>('[data-act="play"]');
-  const prevBtn = q<HTMLButtonElement>('[data-act="prev"]');
-  const nextBtn = q<HTMLButtonElement>('[data-act="next"]');
-  let pending = 0;        // next-presses received while a step was still playing
 
   let FR: Frag[] = [];
   let WMAX = 127;
-  let step = 0;
   let now = 0;
-  let running = false;
-  let playing = false;
-  let stopping = false;
-  let token = 0;
+  let speed = 1;
+  const T = (ms: number) => Math.round(ms * speed);
 
   const pct = (w: number) => `${(w / WMAX) * 100}%`;
 
@@ -59,16 +43,6 @@ if (root) {
   // consumer reads it, so one whose consumer is already behind `now` is gone.
   const heldAt = (upto: number, at: number) =>
     FR.slice(0, upto).reduce((s, f) => s + (f.cmin > at ? f.vgprs : 0), 0);
-
-  function paintControls() {
-    playBtn.textContent = playing ? "Stop" : "Play";
-    playBtn.disabled = running && !playing;
-    // Live while a step animates: pressing next again cuts it short instead of
-    // being dropped, so the arrow can be spammed to reach a given step.
-    nextBtn.disabled = playing || step >= FR.length;
-    prevBtn.disabled = playing || step === 0;
-    progress.textContent = step === 0 ? "" : `${step} / ${FR.length}`;
-  }
 
   function buildQueue() {
     queue.style.minHeight = "";
@@ -84,7 +58,7 @@ if (root) {
     queue.style.minHeight = `${queue.offsetHeight}px`;
   }
 
-  function moveNow(to: number, runTime = 420) {
+  function moveNow(to: number, runTime: number) {
     const from = now;
     now = to;
     return play((a) => {
@@ -94,8 +68,8 @@ if (root) {
     }, runTime, smooth);
   }
 
-  async function advance() {
-    const mine = token;
+  async function advance(mine: number) {
+    const step = loop.step;
     if (step >= FR.length) return;
     const f = FR[step];
     const block = queue.querySelector<HTMLElement>(".te-block");
@@ -104,26 +78,26 @@ if (root) {
     if (step === 0 && none.style.visibility !== "hidden") {
       // keep its box: removing it from flow shrinks the column and shifts
       // everything below by ~66px
-      await fadeOut(none, 200);
+      await fadeOut(none, T(200));
       none.style.visibility = "hidden";
     }
-    if (token !== mine) return;
+    if (loop.token !== mine) return;
 
-    await moveNow(f.issue_off, step === 0 ? 520 : 380);
-    if (token !== mine) return;
+    await moveNow(f.issue_off, T(step === 0 ? 520 : 380));
+    if (loop.token !== mine) return;
 
     // into the comparator, which is the only thing that happens to it: there is
     // nothing to compare it against
     await flip([...queue.querySelectorAll<HTMLElement>(".te-block"), block],
-               () => comp.appendChild(block), 380);
-    if (token !== mine) return;
+               () => comp.appendChild(block), T(380));
+    if (loop.token !== mine) return;
     // The text is in the markup and never removed -- only made visible. Setting
     // it here and clearing it afterwards let the box collapse between steps, and
     // min-height under-reserved it by a pixel, so the timeline below hopped down
     // and back on every single step. Same reason .te-none keeps its box.
     verdict.style.visibility = "visible";
-    await fadeIn(verdict, 180);
-    if (token !== mine) return;
+    await fadeIn(verdict, T(180));
+    if (loop.token !== mine) return;
 
     // and out onto the timeline as a held-but-unread span
     const bar = document.createElement("div");
@@ -136,28 +110,22 @@ if (root) {
     bar.title = `${f.vgprs} VGPRs held from W[${f.issue_off}] until W[${f.cmin}]`;
     rows.appendChild(bar);
     await Promise.all([
-      fadeOut(block, 200).then(() => block.remove()),
-      play((a) => { bar.style.width = pct((f.cmin - f.issue_off) * a); }, 420, smooth),
+      fadeOut(block, T(200)).then(() => block.remove()),
+      play((a) => { bar.style.width = pct((f.cmin - f.issue_off) * a); }, T(420), smooth),
     ]);
-    if (token !== mine) return;
+    if (loop.token !== mine) return;
 
     counter.textContent = String(heldAt(step + 1, f.issue_off));
-    await indicate(counter, 1.25, 300);
-    if (token !== mine) return;
-    await fadeOut(verdict, 140);
+    await indicate(counter, 1.25, T(300));
+    if (loop.token !== mine) return;
+    await fadeOut(verdict, T(140));
     verdict.style.visibility = "hidden";
 
-    step++;
-    paintControls();
+    loop.step++;
+    loop.paint();
   }
 
-  function reset() {
-    token++;
-    step = 0;
-    now = 0;
-    running = false;
-    playing = false;
-    stopping = false;
+  function rebuild() {
     buildQueue();
     rows.replaceChildren();
     comp.querySelectorAll(".te-block").forEach((b) => b.remove());
@@ -169,101 +137,28 @@ if (root) {
     verdict.style.opacity = "1";
     none.style.visibility = "";
     none.style.opacity = "1";
-    paintControls();
   }
 
-  // Replay from the start with every animation collapsed, to land on `target`.
-  // Stepping backwards has no undo: rebuilding is the only way to be sure the
-  // state matches what stepping forwards would have produced.
-  async function seek(target: number) {
-    reset();               // bumps the token itself, cancelling anything in flight
-    const mine = token;    // ...so capture it AFTER, or the replay aborts at once
-    beginSkip();
-    for (let i = 0; i < target && token === mine; i++) await advance();
-    endSkip();
-    paintControls();
-  }
-
-  nextBtn.addEventListener("click", async () => {
-    if (playing || step >= FR.length) return;
-    if (running) {           // cut the in-flight step short and queue another
-      pending++;
-      beginSkip();
-      return;
-    }
-    running = true; paintControls();
-    // Drain queued presses with animation suppressed, so holding down the arrow
-    // fast-forwards instead of playing every step at full speed in turn.
-    for (;;) {
-      await advance();
-      if (pending <= 0 || step >= FR.length) break;
-      pending--;
-      beginSkip();
-    }
-    endSkip();
-    pending = 0;
-    running = false; paintControls();
+  const loop = new RunLoop({
+    root,
+    progressSel: ".te-progress",
+    count: () => FR.length,
+    advance,
+    rebuild,
+    gap: () => T(220),
   });
 
-  prevBtn.addEventListener("click", () => {
-    if (playing || step === 0) return;
-    pending = 0;
-    running = false;
-    void seek(step - 1);
-  });
-
-  playBtn.addEventListener("click", async () => {
-    if (playing) { stopping = true; return; }
-    if (running) return;
-    if (step >= FR.length) reset();
-    playing = true; stopping = false; paintControls();
-    const mine = token;
-    while (step < FR.length && token === mine && !stopping) {
-      running = true;
-      await advance();
-      running = false;
-      if (stopping || token !== mine) break;
-      await wait(220);
-    }
-    playing = false; stopping = false; running = false;
-    paintControls();
-  });
-
-  q<HTMLElement>('[data-act="reset"]').addEventListener("click", () => reset());
-
-  // Both kernels, switched in place. The talk only ever showed the mxfp GEMM
-  // here, but the f16 one makes the same point harder: 25 fragments issued into
-  // an empty queue rather than 7.
-  const cache = new Map<string, { clamped: Frag[]; wmax: number }>();
-
-  // See budget.ts: the catch covers the load ONLY. Wrapping the render too made
-  // a rendering bug report itself as a missing file.
-  async function loadKernel(key: string) {
-    let d = cache.get(key);
-    if (!d) {
-      const file = `./sched-${key}.json`;
-      try {
-        const r = await fetch(file);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        d = await r.json();
-      } catch {
-        queue.replaceChildren();
-        queue.textContent = `could not load ${file}`;
-        return;
-      }
-      cache.set(key, d!);
-    }
-    kernelBtns.forEach((btn) =>
-      btn.setAttribute("aria-pressed", String(btn.dataset.kernel === key)));
-    FR = d!.clamped;
-    WMAX = d!.wmax;
+  kernelSwitcher(root, ".te-kernels button", (d: RunData) => {
+    FR = d.clamped;
+    WMAX = d.wmax;
     // issue order without the mutation, which is not the order they are read
     FR.sort((a, b) => a.issue_off - b.issue_off);
+    speed = speedFor(FR.length);
     // The f16 kernel has 25 fragments where the mxfp one has 7, and at the
     // default block size that queue alone is taller than everything beside it.
     // Dense shrinks the blocks rather than scrolling or wrapping them, so it
     // still reads as one ordered queue draining from the top.
-    root.classList.toggle("is-dense", FR.length > 12);
+    root.classList.toggle("is-dense", FR.length > DENSE_ABOVE);
     rows.style.height = `${FR.length * ROW_PITCH}px`;
     // The caption used to state the mxfp numbers as literals, which the f16
     // kernel makes false -- 25 fragments at W[15-37], read at W[60-124], not
@@ -276,14 +171,9 @@ if (root) {
       `Without the mutation all ${FR.length} fragments are scheduled at ` +
       `<strong>${rng(FR.map((f) => f.issue_off))}</strong> but are not read until ` +
       `<strong>${rng(FR.map((f) => f.cmin))}</strong>.`;
-    reset();
-  }
-
-  const kernelBtns = Array.from(root.querySelectorAll<HTMLButtonElement>(".te-kernels button"));
-  kernelBtns.forEach((btn) => btn.addEventListener("click", () => {
-    if (btn.getAttribute("aria-pressed") === "true") return;
-    void loadKernel(btn.dataset.kernel!);
-  }));
-
-  void loadKernel(kernelBtns[0]?.dataset.kernel ?? "mxfp");
+    loop.reset();
+  }, (file) => {
+    queue.replaceChildren();
+    queue.textContent = `could not load ${file}`;
+  });
 }

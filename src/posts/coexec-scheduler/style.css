@@ -765,3 +765,59 @@
 @media (max-width: 34rem) {
   .bw-info { min-height: 13.3rem; }   /* the bullets wrap; see above */
 }
+
+
+/* --- the same run, with the mutation ------------------------------------- */
+/* Reuses the .te-* frame wholesale -- the point of the figure is that it is the
+ * same picture as the run above it -- and adds only what this run has: the
+ * eligibility gate on each queue block, the live/idle state of the bumpCycle
+ * box, and the ghosts of where the loads went without the mutation. */
+
+/* A gated block is in the queue but not in Available, so it reads as present
+   but inactive rather than as a normal waiting candidate. */
+.te-block { display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem; }
+.te-block.is-gated { opacity: 0.55; }
+.dr-gate {
+  flex: 0 0 auto;
+  font-size: 0.82em;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bumpCycle loop is greyed by default (see the run without the mutation,
+   where it never applies). Here it genuinely toggles. */
+.te-coda.is-active {
+  opacity: 1;
+  border-left-color: var(--primary);
+}
+.te-coda.is-active pre code,
+.te-coda.is-active p { color: var(--on_surface); }
+
+.dr-ghost {
+  position: absolute;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--on_surface_variant);
+  opacity: 0.3;
+  z-index: 0;
+}
+.te-bar { z-index: 1; }
+
+.dr-ghostkey {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.8rem 0 0;
+  min-height: 1.2em;
+  font-size: 0.82em;
+  color: var(--on_surface_variant);
+  visibility: hidden;   /* kept in flow; see .te-verdict */
+}
+.dr-ghostswatch {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 0.55rem;
+  border-radius: 2px;
+  background: var(--on_surface_variant);
+  opacity: 0.3;
+}

@@ -165,7 +165,7 @@ This scheduler is greedy, like other schedulers. Whenever an instruction is avai
 <h3>An example run on a real kernel</h3>
 
 <p>
-The following is a snippet of a CoExecScheduler run on the <button type="button" class="info-link" popovertarget="mxfp-cmd">mxfp GEMM</button>. The x-axis is the order of scheduled WMMAs (so we are looking at the live ranges of loads relative to the position of WMMA instructions in the GEMM's hot loop). Each <code>ds_load</code> is also labeled with the first WMMA that consumes its data. For the sake of brevity, you can imagine that in between these loads being scheduled, so are some WMMAs that become available (which is why the "now" line moves across the x-axis after all). But this is not enough to keep the available queue saturated with instructions other than these loads. Whenever some other instruction is added to the available queue, they are quickly scheduled since they win out in the heuristics, leaving the queue with only these load instructions - and these load instructions won't be consumed until much later, so scheduling them creates really long live ranges!
+The following is a snippet of a CoExecScheduler run; the buttons on the figure switch between the <button type="button" class="info-link" popovertarget="mxfp-cmd">mxfp GEMM</button> and the <button type="button" class="info-link" popovertarget="f16-cmd">f16 GEMM</button>. The x-axis is the order of scheduled WMMAs (so we are looking at the live ranges of loads relative to the position of WMMA instructions in the GEMM's hot loop). Each <code>ds_load</code> is also labeled with the first WMMA that consumes its data. For the sake of brevity, you can imagine that in between these loads being scheduled, so are some WMMAs that become available (which is why the "now" line moves across the x-axis after all). But this is not enough to keep the available queue saturated with instructions other than these loads. Whenever some other instruction is added to the available queue, they are quickly scheduled since they win out in the heuristics, leaving the queue with only these load instructions - and these load instructions won't be consumed until much later, so scheduling them creates really long live ranges!
 </p>
 
 <div class="info-pop" id="mxfp-cmd" popover>
@@ -179,6 +179,21 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
   --scale_preshuffled --schedule sliceNK</code></pre>
   <p>
     Launches <code>mxgemm_tdm_pipelined_kernel</code> on GFX1250.
+  </p>
+</div>
+
+<div class="info-pop" id="f16-cmd" popover>
+  <h4>f16 GEMM</h4>
+  <pre><code>TRITON_HIP_USE_COEXEC_SCHEDULER=1 \
+python third_party/amd/python/examples/gluon/f16_gemm_gfx1250.py \
+  -M 1024 -N 1024 -K 2048 \
+  --block_m 256 --block_n 128 --block_k 256 \
+  --num-warps 4 --num-buffers 3 \
+  --prefetch-lds --prefetch-l2-distance 0 \
+  --single-warp-schedule</code></pre>
+  <p>
+    Launches <code>gemm_tdm_pipelined_single_warp_per_simd_schedule_kernel</code> on GFX1250.
+    This is <code>f16_bm256_bk256</code> in the CI kernel corpus.
   </p>
 </div>
 
@@ -282,4 +297,65 @@ The DAG mutation starts with every load fragment's window being as short and as 
     <button type="button" data-act="reset">Reset</button>
     <span class="bw-progress"></span>
   </div>
+</figure>
+
+<h3>The same run, with the mutation</h3>
+
+<p>
+The edge does not merely make a load <em>less preferred</em> before its floor &mdash; it makes it ineligible, so it is not in <code>Available</code> at all. That is the difference that matters. While <code>Available</code> is empty the scheduler runs <code>bumpCycle()</code> and the clock advances, which is the one thing <code>tryCandidateCoexec</code> could never reach: a function that compares two candidates has no way to empty the queue.
+</p>
+
+<figure class="te dr" id="dr">
+  <div class="dr-kernels te-kernels" role="group" aria-label="Kernel">
+    <button type="button" data-kernel="mxfp" aria-pressed="true">mxfp GEMM</button>
+    <button type="button" data-kernel="f16" aria-pressed="false">f16 GEMM</button>
+  </div>
+
+  <div class="te-stage">
+    <div class="te-queue">
+      <h4>Available queue</h4>
+      <ol class="te-blocks"></ol>
+      <p class="te-none">none are eligible yet - Available is EMPTY</p>
+    </div>
+
+    <div class="te-right">
+      <div class="te-toprow">
+        <div class="te-mid">
+          <div class="te-compcol">
+            <h4>tryCandidateCoexec</h4>
+            <div class="te-comp"></div>
+            <p class="te-verdict">tryEffectiveStall: stall 0</p>
+          </div>
+          <div class="te-coda is-active">
+            <pre><code>while (Available.empty())
+    bumpCycle();</code></pre>
+            <p>live while nothing is eligible: the clock moves here</p>
+          </div>
+        </div>
+
+        <div class="te-count">
+          <span class="te-count-label">VGPRs held unread</span>
+          <span class="te-count-value">0</span>
+        </div>
+      </div>
+
+      <div class="te-timeline">
+        <div class="te-rows"></div>
+        <div class="te-now" data-label="now: W[0]"></div>
+        <div class="te-axis"><span>W[0]</span><span>W[32]</span><span>W[64]</span><span>W[96]</span><span>W[127]</span></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="dr-ghostkey"><span class="dr-ghostswatch"></span>where CoExec issued the same loads without the mutation</p>
+
+  <div class="te-controls">
+    <button type="button" data-act="prev" aria-label="Previous step">&larr;</button>
+    <button type="button" data-act="play">Play</button>
+    <button type="button" data-act="next" aria-label="Next step">&rarr;</button>
+    <button type="button" data-act="reset">Reset</button>
+    <span class="te-progress"></span>
+  </div>
+
+  <figcaption></figcaption>
 </figure>
