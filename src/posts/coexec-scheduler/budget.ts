@@ -181,11 +181,22 @@ if (root) {
     budgetG.appendChild(bt);
     svg.appendChild(budgetG);
 
+    // Two lines, as the figure has it. Inside a rotated <text> a tspan's dy runs
+    // along local +y, which the -90 maps to global +x -- so the second line lands
+    // beside the first rather than under it, both still centred on the panel.
+    const hcy = (HIST_TOP + HIST_BOT) / 2;
     const hlab = el("text", {
-      class: "bw-axis", x: 12, y: (HIST_TOP + HIST_BOT) / 2,
-      "text-anchor": "middle", transform: `rotate(-90 12 ${(HIST_TOP + HIST_BOT) / 2})`,
+      class: "bw-axis", x: 12, y: hcy,
+      "text-anchor": "middle", transform: `rotate(-90 12 ${hcy})`,
     });
-    hlab.textContent = "live VGPRs";
+    for (const [text, cls, dy] of [
+      ["live VGPRs", "", "0"],
+      ["(calculated by mutation)", "bw-axis-sub", "1.15em"],
+    ] as [string, string, string][]) {
+      const tsp = el("tspan", { x: 12, dy, ...(cls ? { class: cls } : {}) });
+      tsp.textContent = text;
+      hlab.appendChild(tsp);
+    }
     svg.appendChild(hlab);
   }
 
@@ -238,7 +249,7 @@ if (root) {
     const i = step - 1;
     const f = D!.frags[i];
     const from = lefts[i], to = f.earliest;
-    await play((a) => { lefts[i] = from + (to - from) * a; render(); }, 200, smooth);
+    await play((a) => { lefts[i] = from + (to - from) * a; render(); }, 140, smooth);
     if (token !== mine) return;
     lefts[i] = to;
     render();
@@ -257,19 +268,17 @@ if (root) {
       // Three points, in the order the pass establishes them: the window ALAP
       // gives it, what that window costs, and where the budget let it move to.
       const pulled = f.clamped
-        ? `<strong>W[${f.earliest}]</strong> and no further: one step earlier, at W[${f.blocked_at}], the
-           running total was already at the ${f.blocked_hist}-VGPR budget, so it stops here. This is the
-           number in its <code>earlier WMMA &rarr; ds_load</code> edge.`
-        : `<strong>W[${f.earliest}]</strong>, the top of the loop body &mdash; every point on the way back had
-           room under the budget, so it gains no edge.`;
+        ? `<strong>Eased back to W[${f.earliest}]</strong> and no earlier: one WMMA earlier, at
+           W[${f.blocked_at}], and the live VGPR count would exceed the budget of ${D!.budget} VGPRs.`
+        : `<strong>No edge added</strong>, window eased to the very top of the loop.`;
       info.innerHTML =
         `<h4>fragment ${i}${f.clamped ? "" : " - never clamped"}</h4>
          <ul>
-           <li><strong>As late as possible</strong>: issued at W[${f.alap}], first read at W[${f.cmin}]
-               &mdash; too short a window to hide the LDS latency.</li>
-           <li><strong>Costs</strong> ${f.vgprs} VGPRs across those ${f.cmin - f.alap} WMMAs, live on through
-               its consumers to W[${f.maxpos}].</li>
-           <li><strong>Pulled back to</strong> ${pulled}</li>
+           <li><strong>As late as possible</strong>: issued at W[${f.alap}], first read at
+               W[${f.cmin}].</li>
+           <li><strong>Uses</strong> ${f.vgprs} VGPRs, consumed by ${f.maxpos - f.cmin + 1} WMMAs. Live until
+               the last consumer, W[${f.maxpos}].</li>
+           <li>${pulled}</li>
          </ul>`;
     }
     render();
@@ -331,7 +340,7 @@ if (root) {
       await advance();
       running = false;
       if (stopping || token !== mine) break;
-      await wait(step === 1 ? 260 : 35);
+      await wait(step === 1 ? 200 : 20);
     }
     playing = false; stopping = false; running = false;
     paintControls();
