@@ -31,14 +31,8 @@ To understand why the mutation is necessary, we should first look at the pre-RA 
 
 <h3>The CoExecScheduler</h3>
 
-<p>
-  The mutation is largely independent of any particular scheduler, but there is an intention to
-  move the AMDGPU backend to the CoExecScheduler in future, so everything below is measured against
-  it. CoExec is a pre-RA machine scheduler strategy for GFX1250; it replaces the generic
-  bottom-up/top-down instruction scheduler run before register allocation. It is selected when
-  <code>amdgpu-sched-strategy == "coexec"</code>, is gated to gfx1250 only, and is assembled in
-  <code>AMDGPUCoExecSchedStrategy.cpp</code> as a <code>GCNScheduleDAGMILive</code> driven by
-  <code>AMDGPUCoExecSchedStrategy</code> plus two DAG mutations (three, counting ours).
+<p> 
+The DAG mutation is largely independent of any particular scheduler. There is an intention to switch the AMDGPU backend to the CoExecScheduler in the future, so that's what the DAG mutation applies to. CoExec is a pre-RA (pre register allocation) machine scheduler strategy for GFX1250; it replaces the generic bottom-up/top-down instruction scheduler run before register allocation. It is selected when <code>amdgpu-sched-strategy == "coexec"</code>, is gated to gfx1250 only, and is assembled in <code>AMDGPUCoExecSchedStrategy.cpp</code> as a <code>GCNScheduleDAGMILive</code> driven by <code>AMDGPUCoExecSchedStrategy</code> plus two DAG mutations (three if we count ours).
 </p>
 
 <h3>Co-execution windows</h3>

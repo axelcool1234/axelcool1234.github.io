@@ -82,6 +82,13 @@ export function flip(
     .filter((m) => Math.abs(m.dx) > 0.5 || Math.abs(m.dy) > 0.5);
 
   if (!moved.length) return Promise.resolve();
+
+  // Invert SYNCHRONOUSLY, before returning to the browser. play() runs its first
+  // tick in requestAnimationFrame, which is one frame too late: the element has
+  // already been reparented, so that frame paints it at its destination and it
+  // visibly teleports there before snapping back to slide in.
+  for (const m of moved) m.e.style.transform = `translate(${m.dx}px, ${m.dy}px)`;
+
   return play((a) => {
     const k = 1 - a;
     for (const m of moved) m.e.style.transform = `translate(${m.dx * k}px, ${m.dy * k}px)`;
