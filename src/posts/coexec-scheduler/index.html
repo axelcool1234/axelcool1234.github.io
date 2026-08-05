@@ -32,7 +32,7 @@ To understand why the mutation is necessary, we should first look at the pre-RA 
 <h3>The CoExecScheduler</h3>
 
 <p> 
-The DAG mutation is largely independent of any particular scheduler. There is an intention to switch the AMDGPU backend to the CoExecScheduler in the future, so that's what the DAG mutation applies to. CoExec is a pre-RA (pre register allocation) machine scheduler strategy for GFX1250; it replaces the generic bottom-up/top-down instruction scheduler run before register allocation. It is selected when <code>amdgpu-sched-strategy == "coexec"</code>, is gated to gfx1250 only, and is assembled in <code>AMDGPUCoExecSchedStrategy.cpp</code> as a <code>GCNScheduleDAGMILive</code> driven by <code>AMDGPUCoExecSchedStrategy</code> plus two DAG mutations (three if we count ours).
+The DAG mutation is largely independent of any particular scheduler. There is an intention to switch the AMDGPU backend to the CoExecScheduler in the future, so that's what the DAG mutation applies to. CoExec is a pre-RA (pre register allocation) machine scheduler strategy for GFX1250; it replaces the generic bottom-up/top-down instruction scheduler run before register allocation. It is selected when <code>amdgpu-sched-strategy == "coexec"</code>, is gated to GFX1250 only, and is assembled in <code>AMDGPUCoExecSchedStrategy.cpp</code> as a <code>GCNScheduleDAGMILive</code> driven by <code>AMDGPUCoExecSchedStrategy</code> plus two DAG mutations (three if we count ours).
 </p>
 
 <h3>Co-execution windows</h3>
@@ -178,12 +178,15 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
   --dtype_a float8_e4m3 --dtype_b float8_e4m3 \
   --scale_preshuffled --schedule sliceNK</code></pre>
   <p>
-    Launches <code>mxgemm_tdm_pipelined_kernel</code> on gfx1250.
+    Launches <code>mxgemm_tdm_pipelined_kernel</code> on GFX1250.
   </p>
 </div>
 
 <figure class="te" id="te">
-  <p class="te-sub">CoExecScheduler, no mutation - scheduling 7 <code>ds_load</code> fragments in the mxfp GEMM</p>
+  <div class="te-kernels" role="group" aria-label="Kernel">
+    <button type="button" data-kernel="mxfp" aria-pressed="true">mxfp GEMM</button>
+    <button type="button" data-kernel="f16" aria-pressed="false">f16 GEMM</button>
+  </div>
 
   <div class="te-stage">
     <div class="te-queue">
@@ -228,9 +231,7 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
     <span class="te-progress"></span>
   </div>
 
-  <figcaption>
-    Without the mutation all seven fragments are scheduled at <strong>W[33-43]</strong> but are not read until <strong>W[88-101]</strong>.
-  </figcaption>
+  <figcaption></figcaption>
 </figure>
 
 
@@ -262,7 +263,7 @@ The DAG mutation starts with every load fragment's window being as short and as 
 
 <figure class="bw" id="bw">
   <div class="bw-kernels" role="group" aria-label="Kernel">
-    <button type="button" data-kernel="canonical" aria-pressed="true">mxfp GEMM</button>
+    <button type="button" data-kernel="mxfp" aria-pressed="true">mxfp GEMM</button>
     <button type="button" data-kernel="f16" aria-pressed="false">f16 GEMM</button>
   </div>
   <svg class="bw-svg" viewBox="0 0 680 362" role="img"

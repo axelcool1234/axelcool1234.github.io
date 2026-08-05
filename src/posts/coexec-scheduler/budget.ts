@@ -354,8 +354,8 @@ if (root) {
 
   // The talk gives each kernel its own pair of slides. One widget can hold both:
   // same derivation, different DAG, and the contrast is the point -- f16 has an
-  // 88-VGPR budget against canonical's 228, and clamps 25 of its 36 fragments
-  // where canonical clamps 7 of 23.
+  // 88-VGPR budget against the mxfp GEMM's 228, and clamps 25 of its 36
+  // fragments where mxfp clamps 7 of 23.
   const cache = new Map<string, Data>();
 
   // The catch wraps ONLY the load. It used to wrap the render too, so a mistake
@@ -398,5 +398,5 @@ if (root) {
     void loadKernel(btn.dataset.kernel!);
   }));
 
-  void loadKernel(kernelBtns[0]?.dataset.kernel ?? "canonical");
+  void loadKernel(kernelBtns[0]?.dataset.kernel ?? "mxfp");
 }

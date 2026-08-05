@@ -306,6 +306,26 @@
   color: var(--on_surface_variant);
 }
 
+.te-kernels { display: flex; gap: 0.4rem; margin: 0 0 0.7rem; }
+.te-kernels button {
+  font: inherit;
+  font-size: 0.82em;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: none;
+  color: var(--on_surface);
+  cursor: pointer;
+}
+.te-kernels button[aria-pressed="true"] { border-color: var(--primary); background: var(--surface); }
+
+/* Many-fragment kernels: shrink the queue blocks so the column stays beside the
+   timeline instead of towering over it. The column keeps its 11rem -- widening
+   it to unwrap the note below squeezed the right side until the
+   while (Available.empty()) snippet lost its closing bracket. */
+.te.is-dense .te-blocks { gap: 0.16rem; }
+.te.is-dense .te-block { padding: 0.1rem 0.45rem; font-size: 0.72em; }
+
 .te-sub {
   margin: 0 0 0.9rem;
   font-size: 0.9em;

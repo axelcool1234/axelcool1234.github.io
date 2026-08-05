@@ -3,9 +3,9 @@
 //
 // Same shape as the ready-queue widget above it: the queue drains through
 // tryCandidateCoexec, but here the clock is real and so are the numbers. Every
-// value comes from sched-data.json, extracted from a
-// -debug-only=machine-scheduler run on mxfp_gemm_canonical, so the bars on the
-// timeline are where the scheduler actually put those loads.
+// value comes from sched-<kernel>.json, extracted from a
+// -debug-only=machine-scheduler run on that kernel, so the bars on the timeline
+// are where the scheduler actually put those loads.
 //
 // The point the figure has to land: each fragment issues around W[33-43] and is
 // not read until W[88-101], so it sits in a register for ~55 WMMAs doing
@@ -24,6 +24,9 @@ interface Frag {
   issue_on: number;
 }
 
+// Vertical pitch of one timeline bar, in px.
+const ROW_PITCH = 14;
+
 const root = document.getElementById("te");
 if (root) {
   const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
@@ -35,6 +38,7 @@ if (root) {
   const nowLine = q<HTMLElement>(".te-now");
   const counter = q<HTMLElement>(".te-count-value");
   const progress = q<HTMLElement>(".te-progress");
+  const caption = q<HTMLElement>("figcaption");
   const playBtn = q<HTMLButtonElement>('[data-act="play"]');
   const prevBtn = q<HTMLButtonElement>('[data-act="prev"]');
   const nextBtn = q<HTMLButtonElement>('[data-act="next"]');
@@ -74,9 +78,9 @@ if (root) {
       li.textContent = `ds_load → W[${f.cmin}]`;
       return li;
     }));
-    // Reading offsetHeight forces layout, so this is the height with all seven
-    // present; without it the column shrinks block by block and drags the
-    // timeline up the page as the queue drains.
+    // Reading offsetHeight forces layout, so this is the height with every
+    // block present; without it the column shrinks block by block and drags
+    // the timeline up the page as the queue drains.
     queue.style.minHeight = `${queue.offsetHeight}px`;
   }
 
@@ -126,7 +130,7 @@ if (root) {
     bar.className = "te-bar";
     // bottom-up: the first fragment issued sits at the bottom, so the stack
     // grows toward the reader rather than pushing everything down
-    bar.style.top = `${(FR.length - 1 - step) * 14}px`;
+    bar.style.top = `${(FR.length - 1 - step) * ROW_PITCH}px`;
     bar.style.left = pct(f.issue_off);
     bar.style.width = "0%";
     bar.title = `${f.vgprs} VGPRs held from W[${f.issue_off}] until W[${f.cmin}]`;
@@ -227,23 +231,59 @@ if (root) {
 
   q<HTMLElement>('[data-act="reset"]').addEventListener("click", () => reset());
 
-  // See budget.ts: the catch must cover the load only, or a render bug reports
-  // itself as a missing file.
-  fetch("./sched-data.json")
-    .then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    })
-    .catch((e) => {
-      q<HTMLElement>(".te-sub").textContent = "could not load sched-data.json";
-      throw e;
-    })
-    .then((d) => {
-      FR = d.clamped as Frag[];
-      WMAX = d.wmax;
-      // issue order without the mutation, which is not the order they are read
-      FR.sort((a, b) => a.issue_off - b.issue_off);
-      rows.style.height = `${FR.length * 14}px`;
-      reset();
-    });
+  // Both kernels, switched in place. The talk only ever showed the mxfp GEMM
+  // here, but the f16 one makes the same point harder: 25 fragments issued into
+  // an empty queue rather than 7.
+  const cache = new Map<string, { clamped: Frag[]; wmax: number }>();
+
+  // See budget.ts: the catch covers the load ONLY. Wrapping the render too made
+  // a rendering bug report itself as a missing file.
+  async function loadKernel(key: string) {
+    let d = cache.get(key);
+    if (!d) {
+      const file = `./sched-${key}.json`;
+      try {
+        const r = await fetch(file);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        d = await r.json();
+      } catch {
+        queue.replaceChildren();
+        queue.textContent = `could not load ${file}`;
+        return;
+      }
+      cache.set(key, d!);
+    }
+    kernelBtns.forEach((btn) =>
+      btn.setAttribute("aria-pressed", String(btn.dataset.kernel === key)));
+    FR = d!.clamped;
+    WMAX = d!.wmax;
+    // issue order without the mutation, which is not the order they are read
+    FR.sort((a, b) => a.issue_off - b.issue_off);
+    // The f16 kernel has 25 fragments where the mxfp one has 7, and at the
+    // default block size that queue alone is taller than everything beside it.
+    // Dense shrinks the blocks rather than scrolling or wrapping them, so it
+    // still reads as one ordered queue draining from the top.
+    root.classList.toggle("is-dense", FR.length > 12);
+    rows.style.height = `${FR.length * ROW_PITCH}px`;
+    // The caption used to state the mxfp numbers as literals, which the f16
+    // kernel makes false -- 25 fragments at W[15-37], read at W[60-124], not
+    // seven at W[33-43]. Read them off the data instead.
+    const rng = (xs: number[]) => {
+      const lo = Math.min(...xs), hi = Math.max(...xs);
+      return lo === hi ? `W[${lo}]` : `W[${lo}-${hi}]`;
+    };
+    caption.innerHTML =
+      `Without the mutation all ${FR.length} fragments are scheduled at ` +
+      `<strong>${rng(FR.map((f) => f.issue_off))}</strong> but are not read until ` +
+      `<strong>${rng(FR.map((f) => f.cmin))}</strong>.`;
+    reset();
+  }
+
+  const kernelBtns = Array.from(root.querySelectorAll<HTMLButtonElement>(".te-kernels button"));
+  kernelBtns.forEach((btn) => btn.addEventListener("click", () => {
+    if (btn.getAttribute("aria-pressed") === "true") return;
+    void loadKernel(btn.dataset.kernel!);
+  }));
+
+  void loadKernel(kernelBtns[0]?.dataset.kernel ?? "mxfp");
 }
