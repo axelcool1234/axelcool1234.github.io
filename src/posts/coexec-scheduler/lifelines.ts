@@ -42,7 +42,7 @@ const root = document.getElementById("lr");
 if (root) {
   const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
   const svg = q<SVGSVGElement>(".lr-svg");
-  const caption = q<HTMLElement>("figcaption");
+  const legend = q<HTMLElement>(".lr-legend");
   const dagBtns = Array.from(root.querySelectorAll<HTMLButtonElement>(".lr-dag button"));
 
   let D: Data | null = null;
@@ -55,7 +55,7 @@ if (root) {
   let yMax = 1;
   const py = (v: number) => G.histBot - (v / yMax) * (G.histBot - G.histTop);
 
-  let heldR: SVGElement[] = [], useR: SVGElement[] = [];
+  let heldR: SVGElement[] = [], useR: SVGElement[] = [], ghostR: SVGElement[] = [];
   let curveOff: SVGElement, curveOn: SVGElement, fillOff: SVGElement, fillOn: SVGElement;
 
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -74,8 +74,18 @@ if (root) {
     curveOn = svgEl("path", { class: "lr-curve lr-on", d: pressPath(D!.on, false) });
     svg.append(fillOff, fillOn, curveOff, curveOn);
 
-    heldR = []; useR = [];
-    D!.off.bars.forEach((_, i) => {
+    heldR = []; useR = []; ghostR = [];
+    D!.off.bars.forEach((o, i) => {
+      // What the bar gives up. The consumers never move between the two runs
+      // (checked: cmin and cmax are identical for every fragment in both
+      // kernels), so the only thing that changes is where the load is issued,
+      // and the ghost is exactly the span it stops holding.
+      const ghost = svgEl("rect", {
+        class: "lr-ghost", y: rowY(i), height: BAR_H,
+        x: x(o.issued), width: Math.max(0, x(o.cmin) - x(o.issued)), opacity: 0,
+      });
+      svg.append(ghost);
+      ghostR.push(ghost);
       const held = svgEl("rect", { class: "lr-held", y: rowY(i), height: BAR_H, x: 0, width: 0 });
       const use = svgEl("rect", {
         class: `lr-use${D!.on.bars[i].clamped ? " is-clamped" : ""}`,
@@ -109,22 +119,16 @@ if (root) {
       useR[i].setAttribute("x", String(x(cmin)));
       useR[i].setAttribute("width", String(Math.max(0, x(cmax) - x(cmin))));
     });
-    for (const [e, on] of [[curveOff, false], [fillOff, false],
-                           [curveOn, true], [fillOn, true]] as [SVGElement, boolean][]) {
-      e.classList.toggle("is-active", on === (alpha > 0.5));
-    }
-    (curveOn as SVGElement).style.opacity = "";
-  }
-
-  function setCaption() {
-    const peak = (s: Side) => Math.max(...s.pressure.y);
-    const held = (s: Side) => s.bars.reduce((t, b) => t + (b.cmin - b.issued), 0);
-    const d = peak(D!.off) - peak(D!.on);
-    caption.innerHTML =
-      `Peak measured pressure <strong>${peak(D!.off)} → ${peak(D!.on)} VGPRs</strong> ` +
-      `(${d >= 0 ? "−" : "+"}${Math.abs(d)}), and the total time these fragments spend held but ` +
-      `unread falls from <strong>${held(D!.off)}</strong> to <strong>${held(D!.on)}</strong> ` +
-      `WMMA slots. Both runs are real; the toggle swaps between them.`;
+    // Nothing is ghosted at mutation-off: there is no earlier state to show, and
+    // a second peak hanging under the curve there just read as noise. The off
+    // curve IS the ghost -- it fades back as the on curve comes up over it.
+    ghostR.forEach((g) => g.setAttribute("opacity", String(0.3 * alpha)));
+    curveOff.setAttribute("opacity", String(lerp(1, 0.3, alpha)));
+    curveOff.setAttribute("stroke-width", String(lerp(1.6, 1.1, alpha)));
+    fillOff.setAttribute("opacity", String(lerp(0.2, 0.07, alpha)));
+    curveOn.setAttribute("opacity", String(alpha));
+    curveOn.setAttribute("stroke-width", "1.6");
+    fillOn.setAttribute("opacity", String(0.2 * alpha));
   }
 
   async function setMutation(on: boolean, animate: boolean) {
@@ -152,7 +156,7 @@ if (root) {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       d = (await r.json()) as Data;
     } catch {
-      caption.textContent = `could not load ${file}`;
+      legend.textContent = `could not load ${file}`;
       return;
     }
     root!.querySelectorAll<HTMLButtonElement>(".lr-kernels button")
@@ -164,7 +168,6 @@ if (root) {
     ROW = rg.row; BAR_H = rg.barH; rowY = rg.y;
     yMax = Math.max(...d.off.pressure.y, ...d.on.pressure.y) * 1.08;
     build();
-    setCaption();
     void setMutation(mutation, false);
   }
 

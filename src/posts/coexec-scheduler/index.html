@@ -286,7 +286,7 @@ The DAG mutation starts with every load fragment's window being as short and as 
   <ul class="bw-legend">
     <li><span class="bw-key bw-kheld"></span>held live but not yet read</li>
     <li><span class="bw-key bw-kinuse"></span>in use (first to last consumer)</li>
-    <li><span class="bw-key bw-kclamp"></span>in use, gained a WMMA &rarr; ds_load edge</li>
+    <li><span class="bw-key bw-kclamp"></span>in use, gained a WMMA &rarr; ds_load edge (first to last consumer)</li>
   </ul>
   <div class="bw-info"></div>
   <div class="bw-controls">
@@ -358,10 +358,10 @@ With these added edges forming a window for every <code>ds_load</code> fragment,
   <figcaption></figcaption>
 </figure>
 
-<h3>What it actually bought</h3>
+<h3>Live range reduction</h3>
 
 <p>
-The chart above shows the pressure the mutation <em>calculates</em> over the <code>ds_load</code> fragments while it is deciding where they may go. This one shows what the scheduler <em>measured</em> afterwards: total VGPR pressure across the whole region, sampled once per pick. The two y scales are nothing like each other for that reason. Both runs below are real; the toggle swaps between them.
+The following chart shows how the DAG mutation affects the live ranges (and consequently, the VGPR usage) of the <code>ds_load</code> fragments.↴
 </p>
 
 <figure class="lr" id="lr">
@@ -377,13 +377,13 @@ The chart above shows the pressure the mutation <em>calculates</em> over the <co
   </div>
 
   <svg class="lr-svg" viewBox="0 0 680 362" role="img"
-       aria-label="One bar per ds_load fragment showing how long it is held live against the WMMA timeline, above the VGPR pressure the scheduler measured over the same region, with and without the DAG mutation"></svg>
+       aria-label="One bar per ds_load fragment showing how long it is held live, along with the VGPR usage, with and without the DAG mutation"></svg>
 
   <ul class="lr-legend">
     <li><span class="lr-key lr-kheld"></span>held live but not yet read</li>
     <li><span class="lr-key lr-kinuse"></span>in use (first to last consumer)</li>
-    <li><span class="lr-key lr-kclamp"></span>in use, constrained by the mutation</li>
+    <li><span class="lr-key lr-kclamp"></span>in use, gained a WMMA &rarr; <code>ds_load</code> edge</li>
+    <li><span class="lr-key lr-kghost"></span>held live without the mutation</li>
   </ul>
 
-  <figcaption></figcaption>
 </figure>

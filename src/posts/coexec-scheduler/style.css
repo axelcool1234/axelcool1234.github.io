@@ -858,11 +858,17 @@
 .lr-use { fill: var(--secondary); }
 .lr-use.is-clamped { fill: var(--primary); }
 
-/* Both curves are drawn; only one is active. */
-.lr-curve { fill: none; stroke: var(--on_surface_variant); stroke-width: 1.1; opacity: 0.28; }
-.lr-fill { fill: var(--on_surface_variant); opacity: 0.07; }
-.lr-curve.is-active { stroke-width: 1.6; opacity: 1; }
-.lr-fill.is-active { opacity: 0.2; }
+/* Opacity and width are set per frame from the toggle's position, not by a
+   class: at mutation-off the "on" curve is fully hidden rather than ghosted,
+   and the "off" curve fades back into being the ghost as you switch. */
+.lr-curve { fill: none; stroke: var(--on_surface_variant); }
+.lr-fill { fill: var(--on_surface_variant); }
+
+/* Where the bar reached before the mutation shortened it. Tinted like the held
+   span it is a ghost of, not neutral: a grey ghost was hard to tell from the
+   in-use segment beside it, and what it means is "this red used to run to
+   here". */
+.lr-ghost { fill: var(--error); }
 
 .lr-legend {
   list-style: none;
@@ -879,5 +885,5 @@
 .lr-kheld { background: var(--error); }
 .lr-kinuse { background: var(--secondary); }
 .lr-kclamp { background: var(--primary); }
+.lr-kghost { background: var(--error); opacity: 0.3; }
 
-.lr figcaption { margin-top: 0.7rem; font-size: 0.85em; color: var(--on_surface_variant); }
