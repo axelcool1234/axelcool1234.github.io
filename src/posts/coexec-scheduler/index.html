@@ -1,41 +1,32 @@
-<h1>Scheduling <code>ds_load</code> on GFX1250 with a DAG mutation</h1>
+<h1>MI450 WMMA and <code>ds_load</code> Scheduling via a DAG mutation</h1>
 
 <p class="post-meta">
-  Target: AMD GFX1250 / MI450, CoExecScheduler (pre-RA) &middot; status: PRs open &middot;
-  <a href="https://github.com/llvm/llvm-project/pull/203095">public PR</a> &middot;
+  Target: AMD GFX1250 / MI450, CoExecScheduler (pre-RA) &middot;
+  <a href="https://github.com/llvm/llvm-project/pull/203095">PR</a> &middot;
   <a href="https://github.com/axelcool1234/AMD-DAG-Mutation-Artifact">artifact</a>
 </p>
 
-<h2>TL;DR</h2>
+<h2>TLDR</h2>
 
 <p>
-  The pre-RA scheduler, run on MI450, tends to bunch many <code>ds_load</code>s (LDS load
-  instructions) at the head of a GEMM inner loop. Looking into the CoExecScheduler, it turned out
-  that because the scheduler greedily schedules an instruction whenever one is available, there are
-  moments where the <em>only</em> instructions available — and therefore the ones scheduled — are
-  <code>ds_load</code>s for data consumed much, much later.
+We noticed that AMD's LLVM pre-RA scheduler, run on MI450, tends to bunch many <code>ds_load</code>s (LDS load instructions) at the head of a GEMM inner loop. Upon further inspection of the CoExecScheduler, it was determined that because the scheduler greedily schedules instructions every time one is available, there are moments where the only instructions available (and therefore scheduled) were <code>ds_load</code>s for data consumed much, much later.
 </p>
 
 <p>That does two bad things at once:</p>
 
 <ul>
-  <li>it forces the WMMAs to sit behind long <code>s_wait_dscnt</code> stalls;</li>
-  <li>it inflates register pressure, because the live ranges are needlessly long.</li>
+  <li>it forces the WMMAs to sit behind long <code>s_wait_dscnt</code> stalls</li>
+  <li>it inflates register pressure due to the unnecessarily increased live ranges</li>
 </ul>
 
 <p>
-  The DAG mutation in <code>AMDGPUWMMASchedule.cpp</code> adds hard constraints on where these loads
-  may sit relative to the WMMAs that consume them. That spreads the loads out and stops the
-  scheduler from greedily issuing them far too early. The mutation is also (statically, and rather
-  naively) aware of register pressure, so those constraints form a <em>window</em> in which each
-  load can be scheduled without causing excessive spills.
+The DAG mutation in <code>AMDGPUWMMASchedule.cpp</code> adds hard constraints on where these loads may sit relative to the WMMAs that consume them. That spreads the loads out and stops the scheduler from greedily scheduling them far too early. The mutation is also (statically and naively) aware of register pressure, so those constraints form a <em>window</em> in which each load can be scheduled without causing excessive spills.
 </p>
 
 <h2>Why do we want the DAG mutation?</h2>
 
 <p>
-  To understand why the mutation is necessary we should first look at the pre-RA scheduler — its
-  strengths, and more importantly its weaknesses.
+To understand why the mutation is necessary, we should first look at the pre-RA scheduler. We should understand its strengths, and more importantly its weaknesses.
 </p>
 
 <h3>The CoExecScheduler</h3>
