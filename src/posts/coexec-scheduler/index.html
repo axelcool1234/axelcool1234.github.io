@@ -1,4 +1,4 @@
-<h1>MI450 WMMA and <code>ds_load</code> Scheduling via a DAG mutation</h1>
+<h1>MI450 WMMA and <code>ds_load</code> Scheduling via a DAG Mutation</h1>
 
 <p class="post-meta">
   Target: AMD GFX1250 / MI450, CoExecScheduler (pre-RA) &middot;
@@ -206,7 +206,6 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
           <div class="te-coda">
             <pre><code>while (Available.empty())
     bumpCycle();</code></pre>
-            <p>the scheduler can schedule nothing, but only if the queue is empty</p>
           </div>
         </div>
 
@@ -238,16 +237,16 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
 </figure>
 
 
-<h3>The four DAG edits</h3>
+<h2>The DAG mutation</h2>
 
 <p>
-The mutation runs after the dependency DAG is built but before <code>tryCandidateCoexec</code> starts picking, and it makes four edits. Three add edges; the fourth only corrects a latency on an edge that already exists. Click an edge below, or a row in the key, to see what each one is for.
+The DAG mutation runs after the dependency DAG is built but before <code>tryCandidateCoexec</code> starts scheduling. The mutation makes four kinds of edits to the DAG. Three add edges, and the fourth corrects latencies on edges that already exists.
 </p>
 
 <figure class="de" id="de">
   <div class="de-stage">
     <svg class="de-svg" viewBox="0 0 520 290" role="img"
-         aria-label="Dependency graph of four WMMAs and two ds_loads, showing the edges the mutation adds"></svg>
+         aria-label="Dependency graph of four WMMAs and two ds_loads, showing the edges the mutation adds or changes"></svg>
     <ul class="de-legend">
       <li><button type="button" aria-pressed="false"><span class="de-key de-k0"></span>WMMA &rarr; WMMA <em>program order</em></button></li>
       <li><button type="button" aria-pressed="false"><span class="de-key de-k1"></span>ds_load &rarr; ds_load <em>LDS bus spacing</em></button></li>
@@ -256,7 +255,4 @@ The mutation runs after the dependency DAG is built but before <code>tryCandidat
     </ul>
   </div>
   <div class="de-info"></div>
-  <figcaption>
-    Only three of the four add anything. The <code>ds_load &rarr; earliest WMMA</code> edge is the existing data dependency; the mutation rewrites its latency rather than creating it.
-  </figcaption>
 </figure>

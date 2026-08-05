@@ -137,7 +137,7 @@ if (root) {
       g.appendChild(el("line", { x1: p.x, y1: p.y, x2: q.x, y2: q.y }));
       // arrowhead
       const ang = Math.atan2(q.y - p.y, q.x - p.x);
-      const L = 9, S = Math.PI / 7;
+      const L = 13, S = Math.PI / 7;
       g.appendChild(el("polygon", {
         points: [
           `${q.x},${q.y}`,
@@ -148,7 +148,10 @@ if (root) {
       // invisible fat line so the edge is easy to hit
       const hit = el("line", {
         x1: p.x, y1: p.y, x2: q.x, y2: q.y,
-        stroke: "transparent", "stroke-width": 16, class: "de-hit",
+        // Both the width and the transparency are set in the stylesheet, not
+        // here: a CSS rule beats a presentation attribute, and .de-e<n> line
+        // sets a stroke colour that would otherwise paint this fat line.
+        class: "de-hit",
       });
       hit.addEventListener("pointerdown", (ev) => {
         ev.preventDefault();
@@ -189,8 +192,11 @@ if (root) {
 
   // Drift: one shared bob plus a per-node jitter, each node pulled back to its
   // home by a spring. Small enough that the diagram stays readable.
-  const M = { xAmp: 3.5, yAmp: 2.5, xSpeed: 0.00042, ySpeed: 0.00055,
-              jAmp: 2.2, jSpeed: 0.0011, spring: 0.02, damping: 0.86 };
+  // Same feel as cube-engine.ts: its speeds are what make the drift read as
+  // floating rather than as a still picture. Mine were ~3.5x slower, which over
+  // any short glance looked like nothing was moving at all.
+  const M = { xAmp: 3, yAmp: 5, xSpeed: 0.0015, ySpeed: 0.002,
+              jAmp: 1.8, jSpeed: 0.0025, spring: 0.01, damping: 0.9 };
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function frame(t: number) {
