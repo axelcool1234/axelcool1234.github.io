@@ -261,7 +261,10 @@ The DAG mutation starts with every load fragment's window being as short and as 
 </p>
 
 <figure class="bw" id="bw">
-  <p class="bw-status"></p>
+  <div class="bw-kernels" role="group" aria-label="Kernel">
+    <button type="button" data-kernel="canonical" aria-pressed="true">mxfp GEMM</button>
+    <button type="button" data-kernel="f16" aria-pressed="false">f16 GEMM</button>
+  </div>
   <svg class="bw-svg" viewBox="0 0 680 362" role="img"
        aria-label="Two panels sharing a WMMA axis: one bar per ds_load fragment showing where it is issued and when it is read, above the live VGPR histogram those bars produce, with the budget limit drawn across it"></svg>
   <p class="bw-sub"></p>

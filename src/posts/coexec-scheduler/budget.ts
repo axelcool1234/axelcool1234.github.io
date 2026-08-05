@@ -47,7 +47,7 @@ interface Data {
 // does -- the whole point is that a bar moving left raises the curve under it.
 const VB_W = 680, VB_H = 362;
 const X0 = 54, X1 = 672;
-const BARS_TOP = 10, ROW = 9.1, BAR_H = 6.4;
+const BARS_TOP = 10, BARS_BOT = 220;   // the bar panel; ROW is per-kernel
 const HIST_TOP = 246, HIST_BOT = 320;
 const TICKS = [0, 32, 64, 96, 127];
 
@@ -55,7 +55,6 @@ const root = document.getElementById("bw");
 if (root) {
   const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
   const svg = q<SVGSVGElement>(".bw-svg");
-  const status = q<HTMLElement>(".bw-status");
   const sub = q<HTMLElement>(".bw-sub");
   const info = q<HTMLElement>(".bw-info");
   const progress = q<HTMLElement>(".bw-progress");
@@ -65,6 +64,10 @@ if (root) {
 
   let D: Data | null = null;
   let NF = 0, NW = 128;
+  // The two kernels have different fragment counts (23 and 36), so the rows are
+  // sized to fill one fixed panel rather than being a constant height -- the
+  // figure must not change shape when you switch.
+  let ROW = 9.1, BAR_H = 6.4;
   let lefts: number[] = [];      // each fragment's current issue point
   let step = 0;                  // 0 = ALAP, 1 = budget shown, 1+k = k fragments moved
   let selected = -1;
@@ -222,12 +225,9 @@ if (root) {
     progress.textContent = step === 0 ? "" : `${step} / ${NF + 1}`;
   }
 
+  // Kept in flow at all times, only made visible -- an appearing line here would
+  // push the whole chart down a row.
   function setStatus() {
-    status.textContent = step <= 1
-      ? "as late as possible: every fragment issued just before its first use"
-      : `extending each fragment's window as early as the budget allows (${step - 1} / ${NF})`;
-    // Kept in flow at all times, only made visible -- an appearing line here
-    // would push the whole chart down a row.
     sub.style.visibility = step > NF ? "visible" : "hidden";
   }
 
@@ -272,12 +272,12 @@ if (root) {
            W[${f.blocked_at}], and the live VGPR count would exceed the budget of ${D!.budget} VGPRs.`
         : `<strong>No edge added</strong>, window eased to the very top of the loop.`;
       info.innerHTML =
-        `<h4>fragment ${i}${f.clamped ? "" : " - never clamped"}</h4>
+        `<h4>Fragment ${i}</h4>
          <ul>
            <li><strong>As late as possible</strong>: issued at W[${f.alap}], first read at
                W[${f.cmin}].</li>
-           <li><strong>Uses</strong> ${f.vgprs} VGPRs, consumed by ${f.maxpos - f.cmin + 1} WMMAs. Live until
-               the last consumer, W[${f.maxpos}].</li>
+           <li><strong>Uses</strong> ${f.vgprs} VGPRs, live across ${f.maxpos - f.alap + 1} WMMAs from
+               issue to its last consumer, W[${f.maxpos}].</li>
            <li>${pulled}</li>
          </ul>`;
     }
@@ -352,24 +352,37 @@ if (root) {
     select(-1);
   });
 
+  // The talk gives each kernel its own pair of slides. One widget can hold both:
+  // same derivation, different DAG, and the contrast is the point -- f16 has an
+  // 88-VGPR budget against canonical's 228, and clamps 25 of its 36 fragments
+  // where canonical clamps 7 of 23.
+  const cache = new Map<string, Data>();
+
   // The catch wraps ONLY the load. It used to wrap the render too, so a mistake
-  // in build() surfaced as "could not load budget-data.json" while the file was
-  // being served with a 200 -- which is a lie that costs an hour to see through.
-  // Anything wrong below the try is now a real, visible page error.
-  async function boot() {
-    let d: Data;
-    try {
-      const r = await fetch("./budget-data.json");
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      d = await r.json();
-    } catch {
-      status.textContent = "could not load budget-data.json";
-      return;
+  // in build() surfaced as "could not load ..." while the file was being served
+  // with a 200 -- a lie that costs an hour to see through. Anything below the
+  // try is now a real, visible page error.
+  async function loadKernel(key: string) {
+    let d = cache.get(key);
+    if (!d) {
+      const file = `./budget-${key}.json`;
+      try {
+        const r = await fetch(file);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        d = (await r.json()) as Data;
+      } catch {
+        info.innerHTML = `<p class="bw-hint">could not load ${file}</p>`;
+        return;
+      }
+      cache.set(key, d);
     }
+    kernelBtns.forEach((btn) =>
+      btn.setAttribute("aria-pressed", String(btn.dataset.kernel === key)));
     D = d;
     NF = d.frags.length;
     NW = d.nwmma;
-    svg.setAttribute("viewBox", `0 0 ${VB_W} ${VB_H}`);
+    ROW = (BARS_BOT - BARS_TOP) / NF;
+    BAR_H = ROW * 0.72;
     // Optional: the caption naming the kernel is not always in the markup.
     const kernel = root!.querySelector<HTMLElement>(".bw-kernel");
     if (kernel) kernel.textContent = d.kernel;
@@ -379,5 +392,11 @@ if (root) {
     reset();
   }
 
-  void boot();
+  const kernelBtns = Array.from(root.querySelectorAll<HTMLButtonElement>(".bw-kernels button"));
+  kernelBtns.forEach((btn) => btn.addEventListener("click", () => {
+    if (btn.getAttribute("aria-pressed") === "true") return;
+    void loadKernel(btn.dataset.kernel!);
+  }));
+
+  void loadKernel(kernelBtns[0]?.dataset.kernel ?? "canonical");
 }
