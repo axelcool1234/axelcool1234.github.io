@@ -21,7 +21,7 @@
 .rq-stage {
   display: flex;
   gap: 0.9rem;
-  align-items: flex-start;
+  align-items: stretch;   /* equal-height columns, so the bin can sit at the bottom */
   flex-wrap: wrap;
 }
 
@@ -106,9 +106,16 @@
   gap: 0.7rem;
 }
 
-.rq-slot {
+/* Fill the column rather than hugging their contents -- one small block in a
+ * label-sized box read as an afterthought next to the queue. */
+.rq-held .rq-slot {
   flex: 1 1 0;
-  min-height: 3.1rem;
+  justify-content: center;
+  max-height: 9rem;
+}
+
+.rq-slot {
+  min-height: 3.4rem;
   padding: 0.3rem;
   border: 1px solid var(--outline);
   border-radius: 6px;
@@ -118,10 +125,11 @@
   gap: 0.3rem;
 }
 
-/* Discards fall out of the bottom of the queue column. */
+/* Anchored to the bottom of the queue column: with margin-top:auto it stays put
+ * as the queue above it drains, instead of creeping upward block by block. */
 .rq-bin {
   border-style: dashed;
-  margin-top: 0.9rem;
+  margin-top: auto;
 }
 
 .rq-slot-label {
