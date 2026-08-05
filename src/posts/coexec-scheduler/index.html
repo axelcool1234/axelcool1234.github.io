@@ -151,8 +151,9 @@ The following shows how <code>pickNodeFromQueue</code> runs. One pass is made ov
   </div>
 
   <div class="rq-controls">
+    <button type="button" data-act="prev" aria-label="Previous step">&larr;</button>
     <button type="button" data-act="play">Play</button>
-    <button type="button" data-act="step">Step</button>
+    <button type="button" data-act="next" aria-label="Next step">&rarr;</button>
     <button type="button" data-act="reset">Reset</button>
     <span class="rq-progress"></span>
   </div>
@@ -164,14 +165,10 @@ The following shows how <code>pickNodeFromQueue</code> runs. One pass is made ov
 This scheduler is greedy, like other schedulers. Whenever an instruction is available to be scheduled, an instruction <em>will</em> be scheduled. The problem is that there are moments when the only available instructions are <code>ds_load</code>s that will not be consumed for a very long time. None of the heuristics can help with this, because CoExec has no way to reject every available instruction and schedule nothing instead. Consequently, the loads are scheduled far too early, simply because the scheduler ran out of anything else that could (and most often would) win.
 </p>
 
-<h3>An example on a real kernel</h3>
+<h3>An example run on a real kernel</h3>
 
 <p>
-The seven <code>ds_load</code> fragments below come from the
-<button type="button" class="info-link" popovertarget="mxfp-cmd">mxfp GEMM</button>, and every
-number in this figure is read out of a <code>-debug-only=machine-scheduler</code> run, so these are
-the positions the scheduler actually chose rather than an illustration. Watch where each load is
-issued, and where it is first read.
+The following is a snippet of a CoExecScheduler run on the <button type="button" class="info-link" popovertarget="mxfp-cmd">mxfp GEMM</button>. The x-axis is the order of scheduled WMMAs (so we are looking at the live ranges of loads relative to the position of WMMA instructions in the GEMM's hot loop). 
 </p>
 
 <div class="info-pop" id="mxfp-cmd" popover>
@@ -184,15 +181,12 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
   --dtype_a float8_e4m3 --dtype_b float8_e4m3 \
   --scale_preshuffled --schedule sliceNK</code></pre>
   <p>
-    Launches <code>mxgemm_tdm_pipelined_kernel</code> on gfx1250. Only <code>-M/-N/-K</code> set the
-    problem size; the tile sizes, dtypes and schedule are what shape the generated code, so the
-    other <code>mxfp_gemm_canonical</code> variants in the corpus compile to exactly this kernel and
-    produce the same schedule.
+    Launches <code>mxgemm_tdm_pipelined_kernel</code> on gfx1250.
   </p>
 </div>
 
 <figure class="te" id="te">
-  <p class="te-sub">CoExecScheduler, no mutation &mdash; scheduling 7 <code>ds_load</code> fragments in the mxfp GEMM</p>
+  <p class="te-sub">CoExecScheduler, no mutation - scheduling 7 <code>ds_load</code> fragments in the mxfp GEMM</p>
 
   <div class="te-stage">
     <div class="te-queue">
@@ -210,7 +204,7 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
           <div class="te-coda">
             <pre><code>while (Available.empty())
     bumpCycle();</code></pre>
-            <p>the scheduler can issue nothing, but only if the queue is empty</p>
+            <p>the scheduler can schedule nothing, but only if the queue is empty</p>
           </div>
         </div>
 
@@ -229,8 +223,9 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
   </div>
 
   <div class="te-controls">
+    <button type="button" data-act="prev" aria-label="Previous step">&larr;</button>
     <button type="button" data-act="play">Play</button>
-    <button type="button" data-act="step">Step</button>
+    <button type="button" data-act="next" aria-label="Next step">&rarr;</button>
     <button type="button" data-act="reset">Reset</button>
     <span class="te-progress"></span>
   </div>
@@ -240,6 +235,3 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
   </figcaption>
 </figure>
 
-<p>
-Notice that nothing here is a bad tie-break. Each load wins because it is the only candidate, and issuing it costs no stall, so the cascade never gets past <code>tryEffectiveStall</code>. The cost arrives ~55 WMMAs later, in registers held the entire time and in the <code>s_wait_dscnt</code> the WMMAs end up sitting behind.
-</p>

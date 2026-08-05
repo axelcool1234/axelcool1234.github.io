@@ -13,7 +13,8 @@
 // the manim original animates all of them: the queue closing up, the highlight
 // travelling down the cascade, the winner swelling, the loser shrinking away.
 
-import { fadeIn, fadeOut, flip, indicate, dissolve, play, wait, reduced, smooth } from "./anim.js";
+import { fadeIn, fadeOut, flip, indicate, dissolve, play, wait, reduced, smooth,
+         beginSkip, endSkip } from "./anim.js";
 
 // (candidate index, rung that decides, does the candidate win?)
 const ROUNDS: [number, number, boolean][] = [
@@ -108,7 +109,9 @@ if (root) {
   let token = 0;           // bumped on reset, so a running play() bails out
 
   const playBtn = root.querySelector<HTMLButtonElement>('[data-act="play"]')!;
-  const stepBtn = root.querySelector<HTMLButtonElement>('[data-act="step"]')!;
+  const prevBtn = root.querySelector<HTMLButtonElement>('[data-act="prev"]')!;
+  const nextBtn = root.querySelector<HTMLButtonElement>('[data-act="next"]')!;
+  let pending = 0;        // next-presses received while a step was still playing
 
   let playing = false;    // the play loop is running
   let stopping = false;   // Stop was pressed; finish this round, then halt
@@ -119,7 +122,10 @@ if (root) {
   function paintControls() {
     playBtn.textContent = playing ? "Stop" : "Play";
     playBtn.disabled = running && !playing;
-    stepBtn.disabled = playing || running || finished();
+    // The arrows stay live while a step animates: pressing next again cuts the
+    // current animation short rather than being ignored, so it can be spammed.
+    nextBtn.disabled = playing || finished();
+    prevBtn.disabled = playing || step === 0;
   }
 
   function setProgress() {
@@ -212,13 +218,46 @@ if (root) {
     setProgress();
   }
 
-  stepBtn.addEventListener("click", async () => {
-    if (running || playing || finished()) return;
+  // Replay from the start with every animation collapsed, to land on `target`.
+  // Stepping backwards has no undo: rebuilding is the only way to be sure the
+  // state matches what stepping forwards would have produced.
+  async function seek(target: number) {
+    reset();               // bumps the token itself, cancelling anything in flight
+    const mine = token;    // ...so capture it AFTER, or the replay aborts at once
+    beginSkip();
+    for (let i = 0; i < target && token === mine; i++) await advance();
+    endSkip();
+    paintControls();
+  }
+
+  nextBtn.addEventListener("click", async () => {
+    if (playing || finished()) return;
+    if (running) {           // cut the in-flight step short and queue another
+      pending++;
+      beginSkip();
+      return;
+    }
     running = true;
     paintControls();
-    await advance();
+    // Drain queued presses with animation suppressed, so holding down the arrow
+    // fast-forwards instead of playing every step at full speed in turn.
+    for (;;) {
+      await advance();
+      if (pending <= 0 || finished()) break;
+      pending--;
+      beginSkip();
+    }
+    endSkip();
+    pending = 0;
     running = false;
     paintControls();
+  });
+
+  prevBtn.addEventListener("click", () => {
+    if (playing || step === 0) return;
+    pending = 0;
+    running = false;
+    void seek(step - 1);
   });
 
   playBtn.addEventListener("click", async () => {

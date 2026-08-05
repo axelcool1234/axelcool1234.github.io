@@ -33,6 +33,21 @@ export const thereAndBack = (t: number): number =>
 // nothing to read -- the whole sequence blinked past in a tenth of a second.
 export const reduced = (): boolean => false;
 
+// --- skipping ---------------------------------------------------------------
+//
+// Two things need animations to collapse to their end state: pressing the next
+// arrow while one is still playing (so the control feels responsive when
+// spammed), and stepping backwards, which is implemented by replaying from the
+// start invisibly. While skipping, play() lands on alpha 1 immediately -- and an
+// already-running play() notices mid-flight and jumps there too, so a step in
+// progress can be cut short rather than waited out.
+
+let skipping = false;
+
+export const beginSkip = (): void => { skipping = true; };
+export const endSkip = (): void => { skipping = false; };
+export const isSkipping = (): boolean => skipping;
+
 // --- the runner ------------------------------------------------------------
 
 export type Tick = (alpha: number) => void;
@@ -40,13 +55,18 @@ export type Tick = (alpha: number) => void;
 // Run `tick` from alpha 0 to 1 over runTime ms. Resolves when finished, so a
 // scene reads as a straight sequence of awaits, like manim's self.play.
 export function play(tick: Tick, runTime = 500, rate = smooth): Promise<void> {
-  if (runTime <= 0) {
+  if (skipping || runTime <= 0) {
     tick(1);
     return Promise.resolve();
   }
   return new Promise((resolve) => {
     const start = performance.now();
     const step = (now: number) => {
+      if (skipping) {          // cut short: land on the end state now
+        tick(1);
+        resolve();
+        return;
+      }
       const t = Math.min(1, (now - start) / runTime);
       tick(rate(t));
       if (t < 1) requestAnimationFrame(step);
@@ -57,7 +77,7 @@ export function play(tick: Tick, runTime = 500, rate = smooth): Promise<void> {
 }
 
 export const wait = (ms: number): Promise<void> =>
-  new Promise((r) => setTimeout(r, ms));
+  skipping ? Promise.resolve() : new Promise((r) => setTimeout(r, ms));
 
 // --- FLIP ------------------------------------------------------------------
 

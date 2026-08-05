@@ -12,7 +12,8 @@
 // nothing. Not because the scheduler chose badly between two candidates -- it is
 // the only thing in the queue.
 
-import { fadeIn, fadeOut, flip, indicate, play, wait, smooth } from "./anim.js";
+import { fadeIn, fadeOut, flip, indicate, play, wait, smooth,
+         beginSkip, endSkip } from "./anim.js";
 
 interface Frag {
   vgprs: number;
@@ -35,7 +36,9 @@ if (root) {
   const counter = q<HTMLElement>(".te-count-value");
   const progress = q<HTMLElement>(".te-progress");
   const playBtn = q<HTMLButtonElement>('[data-act="play"]');
-  const stepBtn = q<HTMLButtonElement>('[data-act="step"]');
+  const prevBtn = q<HTMLButtonElement>('[data-act="prev"]');
+  const nextBtn = q<HTMLButtonElement>('[data-act="next"]');
+  let pending = 0;        // next-presses received while a step was still playing
 
   let FR: Frag[] = [];
   let WMAX = 127;
@@ -56,7 +59,10 @@ if (root) {
   function paintControls() {
     playBtn.textContent = playing ? "Stop" : "Play";
     playBtn.disabled = running && !playing;
-    stepBtn.disabled = playing || running || step >= FR.length;
+    // Live while a step animates: pressing next again cuts it short instead of
+    // being dropped, so the arrow can be spammed to reach a given step.
+    nextBtn.disabled = playing || step >= FR.length;
+    prevBtn.disabled = playing || step === 0;
     progress.textContent = step === 0 ? "" : `${step} / ${FR.length}`;
   }
 
@@ -159,11 +165,44 @@ if (root) {
     paintControls();
   }
 
-  stepBtn.addEventListener("click", async () => {
-    if (running || playing || step >= FR.length) return;
+  // Replay from the start with every animation collapsed, to land on `target`.
+  // Stepping backwards has no undo: rebuilding is the only way to be sure the
+  // state matches what stepping forwards would have produced.
+  async function seek(target: number) {
+    reset();               // bumps the token itself, cancelling anything in flight
+    const mine = token;    // ...so capture it AFTER, or the replay aborts at once
+    beginSkip();
+    for (let i = 0; i < target && token === mine; i++) await advance();
+    endSkip();
+    paintControls();
+  }
+
+  nextBtn.addEventListener("click", async () => {
+    if (playing || step >= FR.length) return;
+    if (running) {           // cut the in-flight step short and queue another
+      pending++;
+      beginSkip();
+      return;
+    }
     running = true; paintControls();
-    await advance();
+    // Drain queued presses with animation suppressed, so holding down the arrow
+    // fast-forwards instead of playing every step at full speed in turn.
+    for (;;) {
+      await advance();
+      if (pending <= 0 || step >= FR.length) break;
+      pending--;
+      beginSkip();
+    }
+    endSkip();
+    pending = 0;
     running = false; paintControls();
+  });
+
+  prevBtn.addEventListener("click", () => {
+    if (playing || step === 0) return;
+    pending = 0;
+    running = false;
+    void seek(step - 1);
   });
 
   playBtn.addEventListener("click", async () => {
