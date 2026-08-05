@@ -29,7 +29,9 @@ const NODE_R = 6;
 // scene puts it one box-gap out from theirs, at BRX).
 const BRACKET_X = 46;
 const BRACKET_ARM = 14;
-const WINDOW_EDIT = 3;   // the budget edit, the one that creates the window
+// The two edits that bound L1's window: the data edge to its first consumer
+// and the budget edge from the earliest WMMA it may follow.
+const WINDOW_EDITS = [2, 3];
 
 interface DagNode {
   id: string;
@@ -213,15 +215,28 @@ if (root) {
     //
     // The manim scene gives this its own beat after the fourth edit, since the
     // window does not exist until the budget edge lands; the static figure just
-    // draws it. Here it follows the selection like everything else, and is only
-    // at full strength for the edit that creates it.
+    // draws it.
+    //
+    // Its two ends are two different edits: the top is where the budget edge
+    // says L1 may first be issued, the bottom where the data edge to L1's first
+    // consumer says it must already have been. So each half carries that edit's
+    // colour, and selecting either one lights the whole bracket -- it takes
+    // both edges to make a window, and neither alone is the window.
     {
-      const on = selected === -1 || selected === WINDOW_EDIT;
+      const on = selected === -1 || WINDOW_EDITS.includes(selected);
       const top = byId.get("W0")!, bot = byId.get("W2")!;
+      const midY = (top.y + bot.y) / 2;
       const g = el("g", { class: `de-window${on ? "" : " is-dim"}` });
-      g.appendChild(el("line", { x1: BRACKET_X, y1: top.y, x2: BRACKET_X, y2: bot.y }));
-      for (const y of [top.y, bot.y]) {
-        g.appendChild(el("line", { x1: BRACKET_X, y1: y, x2: BRACKET_X + BRACKET_ARM, y2: y }));
+      for (const [cls, y1, y2] of [
+        ["de-w-budget", top.y, midY],       // upper bound: earlier WMMA -> ds_load
+        ["de-w-lat", midY, bot.y],          // lower bound: ds_load -> earliest WMMA
+      ] as [string, number, number][]) {
+        g.appendChild(el("line", { class: cls, x1: BRACKET_X, y1, x2: BRACKET_X, y2 }));
+      }
+      for (const [cls, y] of [["de-w-budget", top.y], ["de-w-lat", bot.y]] as [string, number][]) {
+        g.appendChild(el("line", {
+          class: cls, x1: BRACKET_X, y1: y, x2: BRACKET_X + BRACKET_ARM, y2: y,
+        }));
       }
       const mid = BRACKET_X + BRACKET_ARM / 2;
       for (const [dy, cls, text] of [
@@ -241,7 +256,7 @@ if (root) {
     legend.forEach((b, k) => b.setAttribute("aria-pressed", String(k === i)));
     info.innerHTML = i === -1
       ? `<p class="de-hint">Click an edge, or a row above, to see what that edit is for.</p>`
-      : `<h4><code>${EDITS[i].arrow}</code> &mdash; ${EDITS[i].what}</h4><p>${EDITS[i].body}</p>`;
+      : `<h4><code>${EDITS[i].arrow}</code> - ${EDITS[i].what}</h4><p>${EDITS[i].body}</p>`;
     draw();
   }
 

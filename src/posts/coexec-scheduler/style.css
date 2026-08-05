@@ -564,10 +564,12 @@
 
 /* L1's window: the bracket from the end of the manim scene, in the same colour
    as the budget edge that creates it. */
-.de-window line { stroke: var(--error); stroke-width: 2; stroke-linecap: round; }
+.de-window line { stroke-width: 2; stroke-linecap: round; }
+.de-w-budget { stroke: var(--error); }
+.de-w-lat { stroke: var(--on_surface_variant); }
 .de-window.is-dim { opacity: 0.22; }
 .de-window text { font-family: monospace; }
-.de-wtitle { font-size: 12px; fill: var(--error); }
+.de-wtitle { font-size: 12px; fill: var(--on_surface); }
 .de-wsub { font-size: 10px; fill: var(--on_surface_variant); }
 
 .de-legend {
