@@ -11,5 +11,9 @@
       src = "./tooearly.ts";
       module = true;
     }
+    {
+      src = "./dagedits.ts";
+      module = true;
+    }
   ];
 }

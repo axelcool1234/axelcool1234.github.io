@@ -322,7 +322,8 @@
 }
 
 .te-queue { flex: 0 0 11rem; }   /* fixed: content-sized, it re-widths as blocks leave */
-.te-mid   { flex: 1 1 10rem; min-width: 0; }
+.te-mid   { flex: 1 1 22rem; min-width: 0; display: flex; gap: 0.8rem; align-items: flex-start; }
+.te-compcol { flex: 1 1 0; min-width: 0; }
 .te-count { flex: 0 0 auto; text-align: right; }
 
 /* Timeline sits under the comparator on the right rather than spanning the full
@@ -431,7 +432,9 @@
 /* Always shown, and deliberately muted: it is the branch that never gets taken
  * while anything is left in the queue. */
 .te-coda {
-  margin-top: 0.7rem;
+  flex: 1 1 0;
+  min-width: 0;
+  margin-top: 1.6rem;   /* line up with the comparator box, past its heading */
   padding: 0.5rem 0.7rem;
   border-left: 2px solid var(--outline);
   background: var(--surface);
@@ -439,7 +442,7 @@
   opacity: 0.65;
 }
 
-.te-coda pre { margin: 0 0 0.3rem; font-size: 0.78em; color: var(--on_surface_variant); }
+.te-coda pre { margin: 0 0 0.3rem; font-size: 0.72em; overflow-x: auto; color: var(--on_surface_variant); }
 .te-coda p { margin: 0; font-size: 0.82em; color: var(--on_surface_variant); }
 
 .te-controls {
@@ -512,3 +515,76 @@
   font-size: 0.82em;
 }
 .info-pop p { margin: 0; font-size: 0.9em; color: var(--on_surface_variant); }
+
+/* --- the four DAG edits -------------------------------------------------- */
+/* Four edge kinds take four distinct theme roles rather than four shades of
+ * one, so they stay tellable apart across every theme. */
+
+.de {
+  margin: 1.5rem 0;
+  padding: 0.9rem;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface_variant);
+}
+
+.de-stage { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.de-svg { flex: 1 1 20rem; min-width: 0; height: auto; }
+
+.de-node rect { fill: var(--surface); stroke: var(--outline); stroke-width: 1.5; }
+.de-node text { font-family: monospace; font-size: 12px; fill: var(--on_surface); }
+.de-wmma rect { fill: var(--primary); }
+.de-wmma text { fill: var(--on_primary); }
+.de-ds rect { fill: var(--secondary); }
+.de-ds text { fill: var(--on_secondary); }
+
+.de-edge line { stroke-width: 2.5; }
+.de-edge polygon { stroke: none; }
+.de-edge .de-hit { cursor: pointer; }
+.de-edge.is-dim { opacity: 0.22; }
+.de-edge.is-on line { stroke-width: 4; }
+
+.de-e0 line { stroke: var(--tertiary); }   .de-e0 polygon { fill: var(--tertiary); }
+.de-e1 line { stroke: var(--secondary); }  .de-e1 polygon { fill: var(--secondary); }
+.de-e2 line { stroke: var(--on_surface_variant); } .de-e2 polygon { fill: var(--on_surface_variant); }
+.de-e3 line { stroke: var(--error); }      .de-e3 polygon { fill: var(--error); }
+
+.de-legend { flex: 0 0 15rem; list-style: none; margin: 0; padding: 0; }
+.de-legend button {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 0.82em;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: var(--on_surface);
+  cursor: pointer;
+}
+.de-legend button:hover { border-color: var(--outline); }
+.de-legend button[aria-pressed="true"] { border-color: var(--primary); background: var(--surface); }
+.de-legend em { color: var(--on_surface_variant); font-style: normal; }
+
+.de-key { flex: 0 0 auto; width: 1.4rem; height: 0; border-top: 3px solid; border-radius: 2px; }
+.de-k0 { color: var(--tertiary); }
+.de-k1 { color: var(--secondary); }
+.de-k2 { color: var(--on_surface_variant); }
+.de-k3 { color: var(--error); }
+
+.de-info {
+  margin-top: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  min-height: 5.5rem;
+  border-left: 2px solid var(--primary);
+  background: var(--surface);
+  border-radius: 0 6px 6px 0;
+}
+.de-info h4 { margin: 0 0 0.4rem; font-size: 0.92em; }
+.de-info p { margin: 0; font-size: 0.9em; }
+.de-hint { color: var(--on_surface_variant); }
+
+.de figcaption { margin-top: 0.7rem; font-size: 0.85em; color: var(--on_surface_variant); }

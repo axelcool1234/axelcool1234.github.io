@@ -168,11 +168,11 @@ This scheduler is greedy, like other schedulers. Whenever an instruction is avai
 <h3>An example run on a real kernel</h3>
 
 <p>
-The following is a snippet of a CoExecScheduler run on the <button type="button" class="info-link" popovertarget="mxfp-cmd">mxfp GEMM</button>. The x-axis is the order of scheduled WMMAs (so we are looking at the live ranges of loads relative to the position of WMMA instructions in the GEMM's hot loop). 
+The following is a snippet of a CoExecScheduler run on the <button type="button" class="info-link" popovertarget="mxfp-cmd">mxfp GEMM</button>. The x-axis is the order of scheduled WMMAs (so we are looking at the live ranges of loads relative to the position of WMMA instructions in the GEMM's hot loop). Each <code>ds_load</code> is also labeled with the first WMMA that consumes its data. For the sake of brevity, you can imagine that in between these loads being scheduled, so are some WMMAs that become available (which is why the "now" line moves across the x-axis after all). But this is not enough to keep the available queue saturated with instructions other than these loads. Whenever some other instruction is added to the available queue, they are quickly scheduled since they win out in the heuristics, leaving the queue with only these load instructions - and these load instructions won't be consumed until much later, so scheduling them creates really long live ranges!
 </p>
 
 <div class="info-pop" id="mxfp-cmd" popover>
-  <h4>mxfp GEMM &mdash; <code>mxfp_gemm_canonical_32t</code></h4>
+  <h4>mxfp GEMM</h4>
   <pre><code>TRITON_HIP_USE_COEXEC_SCHEDULER=1 \
 python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
   -M 1024 -N 2048 -K 4096 \
@@ -198,9 +198,11 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
     <div class="te-right">
       <div class="te-toprow">
         <div class="te-mid">
-          <h4>tryCandidateCoexec</h4>
-          <div class="te-comp"></div>
-          <p class="te-verdict"></p>
+          <div class="te-compcol">
+            <h4>tryCandidateCoexec</h4>
+            <div class="te-comp"></div>
+            <p class="te-verdict"></p>
+          </div>
           <div class="te-coda">
             <pre><code>while (Available.empty())
     bumpCycle();</code></pre>
@@ -235,3 +237,26 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
   </figcaption>
 </figure>
 
+
+<h3>The four DAG edits</h3>
+
+<p>
+The mutation runs after the dependency DAG is built but before <code>tryCandidateCoexec</code> starts picking, and it makes four edits. Three add edges; the fourth only corrects a latency on an edge that already exists. Click an edge below, or a row in the key, to see what each one is for.
+</p>
+
+<figure class="de" id="de">
+  <div class="de-stage">
+    <svg class="de-svg" viewBox="0 0 520 290" role="img"
+         aria-label="Dependency graph of four WMMAs and two ds_loads, showing the edges the mutation adds"></svg>
+    <ul class="de-legend">
+      <li><button type="button" aria-pressed="false"><span class="de-key de-k0"></span>WMMA &rarr; WMMA <em>program order</em></button></li>
+      <li><button type="button" aria-pressed="false"><span class="de-key de-k1"></span>ds_load &rarr; ds_load <em>LDS bus spacing</em></button></li>
+      <li><button type="button" aria-pressed="false"><span class="de-key de-k2"></span>ds_load &rarr; earliest WMMA <em>latency corrected</em></button></li>
+      <li><button type="button" aria-pressed="false"><span class="de-key de-k3"></span>earlier WMMA &rarr; ds_load <em>budget window</em></button></li>
+    </ul>
+  </div>
+  <div class="de-info"></div>
+  <figcaption>
+    Only three of the four add anything. The <code>ds_load &rarr; earliest WMMA</code> edge is the existing data dependency; the mutation rewrites its latency rather than creating it.
+  </figcaption>
+</figure>
