@@ -17,8 +17,13 @@ export {};   // makes this a module: otherwise its interfaces are global
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 // cube-engine.ts's arrowLength / arrowSpread.
-const HEAD_LEN = 14;
+const HEAD_LEN = 12;
 const HEAD_SPREAD = Math.PI / 7;
+
+// Standoff between an arrow end and the box it meets, and the boxes' corner
+// radius -- NODE_R must match the rx on the rects drawn below.
+const GAP = 2;
+const NODE_R = 6;
 
 interface DagNode {
   id: string;
@@ -42,7 +47,7 @@ const EDITS = [
     key: "order",
     arrow: "WMMA → WMMA",
     what: "added: program order",
-    body: `Chains each WMMA to the next in program order with an artificial edge.`,
+    body: `Chains each WMMA to the next in program order.`,
   },
   {
     key: "space",
@@ -53,13 +58,13 @@ const EDITS = [
   {
     key: "lat",
     arrow: "ds_load → earliest WMMA",
-    what: "corrected: real LDS latency",
+    what: "corrected: CoExec LDS latency",
     body: `This edge already exists (it is the dependency between a load and the first WMMA that reads it). The latency of this edge is changed to the LDS load latency determined by the CoExecScheduler.`,
   },
   {
     key: "budget",
     arrow: "earlier WMMA → ds_load",
-    what: "added: the budget window",
+    what: "added: budget window",
     body: `Each load fragment gets an incoming edge from the earliest WMMA it is allowed to follow, which is as early as the DAG mutation's calculated VGPR budget permits. Together with the edge to its first consumer, this forces the load into a window.`,
   },
 ];
@@ -104,16 +109,40 @@ if (root) {
     return e;
   };
 
-  // Where the line between two boxes meets the border of the first: scale the
-  // centre-to-centre vector until it touches the nearer edge of the rectangle.
+  // Where an edge should meet a box: find which side the centre-to-centre line
+  // leaves through, then sit GAP units outside that side.
+  //
+  // Two things this has to respect that a plain rectangle intersection does
+  // not. The boxes are drawn after the edges, so a point landing exactly on
+  // the border vanishes under the box and the arrow reads as running behind
+  // it -- hence GAP, measured along the side's outward normal so every edge
+  // stands off by the same amount whatever its angle. And the boxes are
+  // rounded (NODE_R), so the last few units of each side are not where the
+  // outline actually is: a diagonal leaving a wide, short box exits near a
+  // corner, and without the clamp its tail floats several units away from the
+  // curve with nothing joining them.
   function anchor(a: DagNode, b: DagNode) {
     const dx = b.x - a.x, dy = b.y - a.y;
-    // No padding: the tip lands exactly on the border of the box it points at,
-    // rather than stopping a few units short and leaving the arrow floating.
-    const sx = dx === 0 ? Infinity : (a.w / 2) / Math.abs(dx);
-    const sy = dy === 0 ? Infinity : (a.h / 2) / Math.abs(dy);
-    const s = Math.min(sx, sy);
-    return { x: a.x + dx * s, y: a.y + dy * s };
+    const hw = a.w / 2, hh = a.h / 2;
+    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+    // Which side to use is |dx| against |dy|, not the true rectangle
+    // intersection (|dx|/hw against |dy|/hh). These boxes are wide and short,
+    // so for a mostly-horizontal edge the true intersection is the TOP of the
+    // target a few units from its corner -- and an arrowhead there has one
+    // barb running along the edge and vanishing under the box. Picking the
+    // side the other node is actually on, then sliding the point along that
+    // side, is also what a reader expects: an edge arriving from the right
+    // should arrive on the right.
+    if (Math.abs(dx) >= Math.abs(dy)) {   // meets the left or right side
+      return {
+        x: a.x + Math.sign(dx) * (hw + GAP),
+        y: clamp(a.y + dy * (hw / Math.abs(dx)), a.y - hh + NODE_R, a.y + hh - NODE_R),
+      };
+    }
+    return {                              // ...the top or bottom
+      x: clamp(a.x + dx * (hh / Math.abs(dy)), a.x - hw + NODE_R, a.x + hw - NODE_R),
+      y: a.y + Math.sign(dy) * (hh + GAP),
+    };
   }
 
   function draw() {
@@ -163,7 +192,7 @@ if (root) {
     for (const n of NODES) {
       const g = el("g", { class: `de-node de-${n.kind}` });
       g.appendChild(el("rect", {
-        x: n.x - n.w / 2, y: n.y - n.h / 2, width: n.w, height: n.h, rx: 6,
+        x: n.x - n.w / 2, y: n.y - n.h / 2, width: n.w, height: n.h, rx: NODE_R,
       }));
       const t = el("text", { x: n.x, y: n.y + 4, "text-anchor": "middle" });
       t.textContent = n.label;
@@ -193,8 +222,11 @@ if (root) {
   // Same feel as cube-engine.ts: its speeds are what make the drift read as
   // floating rather than as a still picture. Mine were ~3.5x slower, which over
   // any short glance looked like nothing was moving at all.
-  const M = { xAmp: 3, yAmp: 5, xSpeed: 0.0015, ySpeed: 0.002,
-              jAmp: 1.8, jSpeed: 0.0025, spring: 0.01, damping: 0.9 };
+  // Smaller excursions than the cube's, at the cube's speeds. Amplitude is the
+  // knob for "how much movement"; slowing it down instead is what made this
+  // read as a still picture earlier.
+  const M = { xAmp: 1.6, yAmp: 2.6, xSpeed: 0.0015, ySpeed: 0.002,
+              jAmp: 0.8, jSpeed: 0.0025, spring: 0.01, damping: 0.9 };
 
   function frame(t: number) {
     const bobX = Math.sin(t * M.xSpeed) * M.xAmp;

@@ -541,7 +541,7 @@
 .de-ds rect { fill: var(--secondary); }
 .de-ds text { fill: var(--on_secondary); }
 
-.de-edge line:not(.de-hit) { stroke-width: 2.5; stroke-linecap: round; }
+.de-edge line:not(.de-hit) { stroke-width: 2; stroke-linecap: round; }
 /* The click target, like the cube's lineHitStrokeWidth: hitting a 2.5px line
    exactly is not something anyone should have to do, and these are drifting.
    It has to live here rather than as a stroke-width attribute in the TS,
@@ -550,7 +550,7 @@
    two rules around it keeps them from clawing the width back. */
 .de-edge .de-hit { cursor: pointer; stroke-width: 28; stroke: transparent; }
 .de-edge.is-dim { opacity: 0.22; }
-.de-edge.is-on line:not(.de-hit) { stroke-width: 4; }
+.de-edge.is-on line:not(.de-hit) { stroke-width: 3.2; }
 
 .de-e0 line { stroke: var(--tertiary); }
 .de-e1 line { stroke: var(--secondary); }
