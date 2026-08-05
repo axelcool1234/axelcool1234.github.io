@@ -64,9 +64,6 @@ The following shows how <code>pickNodeFromQueue</code> runs. One pass is made ov
         <li class="rq-block" data-kind="wmma">WMMA</li>
       </ol>
       <p class="rq-exhausted" hidden>queue exhausted</p>
-      <div class="rq-slot rq-bin" data-slot="bin">
-        <span class="rq-slot-label">discarded</span>
-      </div>
     </div>
 
     <div class="rq-arena">
@@ -147,6 +144,7 @@ The following shows how <code>pickNodeFromQueue</code> runs. One pass is made ov
     <div class="rq-held">
       <div class="rq-slot" data-slot="winner"><span class="rq-slot-label">winner</span></div>
       <div class="rq-slot" data-slot="candidate"><span class="rq-slot-label">candidate</span></div>
+      <div class="rq-slot rq-bin" data-slot="bin"><span class="rq-slot-label">discarded</span></div>
     </div>
   </div>
 

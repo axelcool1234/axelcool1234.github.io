@@ -21,7 +21,7 @@
 .rq-stage {
   display: flex;
   gap: 0.9rem;
-  align-items: stretch;   /* equal-height columns, so the bin can sit at the bottom */
+  align-items: stretch;   /* equal-height columns, so the slots fill their own */
   flex-wrap: wrap;
 }
 
@@ -52,6 +52,11 @@
 }
 
 .rq-block {
+  /* The blocks are <li>s that get moved out of their <ol> into the winner,
+     candidate and discarded slots, which are plain <div>s -- so the list-style
+     on .rq-blocks stops applying and the default marker reappears next to them.
+     Set it on the item itself, which travels with it. */
+  list-style: none;
   padding: 0.3rem 0.6rem;
   border-radius: 6px;
   font-family: monospace;
@@ -96,8 +101,9 @@
   min-width: 0;
 }
 
-/* Winner and candidate stack in their own right-hand column, so the queue on
- * the left feeds across the comparator into them. */
+/* Winner, candidate and the bin stack in their own right-hand column, so the
+ * queue on the left feeds across the comparator into them and the loser drops
+ * out of the comparison into the slot directly below it. */
 .rq-held {
   flex: 0 0 auto;
   min-width: 8.5rem;
@@ -129,12 +135,10 @@
   gap: 0.3rem;
 }
 
-/* Anchored to the bottom of the queue column: with margin-top:auto it stays put
- * as the queue above it drains, instead of creeping upward block by block. */
-.rq-bin {
-  border-style: dashed;
-  margin-top: auto;
-}
+/* Dashed, because unlike the two above it nothing in it is still in play. It
+ * needs no margin-top:auto now that it is one of three equal slots rather than
+ * something hanging off the bottom of the draining queue. */
+.rq-bin { border-style: dashed; }
 
 .rq-slot-label {
   position: absolute;
@@ -341,6 +345,7 @@
 }
 
 .te-block {
+  list-style: none;   /* moved into .te-comp, a div -- see .rq-block */
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   background: var(--secondary);
