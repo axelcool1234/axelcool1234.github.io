@@ -163,3 +163,61 @@ The following shows how <code>pickNodeFromQueue</code> runs. One pass is made ov
 <p>
 This scheduler is greedy, like other schedulers. Whenever an instruction is available to be scheduled, an instruction <em>will</em> be scheduled. The problem is that there are moments when the only available instructions are <code>ds_load</code>s that will not be consumed for a very long time. None of the heuristics can help with this, because CoExec has no way to reject every available instruction and schedule nothing instead. Consequently, the loads are scheduled far too early, simply because the scheduler ran out of anything else that could (and most often would) win.
 </p>
+
+<h3>An example on a real kernel</h3>
+
+<p>
+The seven <code>ds_load</code> fragments below come from <code>mxfp_gemm_canonical</code>, and every number in this figure is read out of a <code>-debug-only=machine-scheduler</code> run &mdash; these are the positions the scheduler actually chose, not an illustration. Watch where each load is issued, and where it is first read.
+</p>
+
+<figure class="te" id="te">
+  <p class="te-sub">CoExecScheduler, no mutation &mdash; scheduling 7 <code>ds_load</code> fragments on <code>mxfp_gemm_canonical</code></p>
+
+  <div class="te-stage">
+    <div class="te-queue">
+      <h4>Available queue</h4>
+      <ol class="te-blocks"></ol>
+      <p class="te-none">0 WMMAs available &mdash; they are all waiting on these loads</p>
+    </div>
+
+    <div class="te-mid">
+      <h4>tryCandidateCoexec</h4>
+      <div class="te-comp"></div>
+      <p class="te-verdict"></p>
+    </div>
+
+    <div class="te-count">
+      <span class="te-count-label">VGPRs held unread</span>
+      <span class="te-count-value">0</span>
+    </div>
+  </div>
+
+  <div class="te-timeline">
+    <div class="te-rows"></div>
+    <div class="te-now" data-label="now: W[0]"></div>
+    <div class="te-axis"><span>W[0]</span><span>W[32]</span><span>W[64]</span><span>W[96]</span><span>W[127]</span></div>
+  </div>
+
+  <p class="te-caption"></p>
+
+  <div class="te-coda" hidden>
+    <pre><code>while (Available.empty())
+    bumpCycle();</code></pre>
+    <p>It <em>can</em> issue nothing &mdash; but only once the queue is empty.</p>
+  </div>
+
+  <div class="te-controls">
+    <button type="button" data-act="play">Play</button>
+    <button type="button" data-act="step">Step</button>
+    <button type="button" data-act="reset">Reset</button>
+    <span class="te-progress"></span>
+  </div>
+
+  <figcaption>
+    Without the mutation all seven fragments issue at <strong>W[33&ndash;43]</strong> but are not read until <strong>W[88&ndash;101]</strong> &mdash; 98 VGPRs held across roughly 55 WMMAs.
+  </figcaption>
+</figure>
+
+<p>
+Notice that nothing here is a bad tie-break. Each load wins because it is the only candidate, and issuing it costs no stall, so the cascade never gets past <code>tryEffectiveStall</code>. The cost arrives ~55 WMMAs later, in registers held the entire time and in the <code>s_wait_dscnt</code> the WMMAs end up sitting behind.
+</p>

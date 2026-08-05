@@ -7,5 +7,9 @@
       src = "./readyqueue.ts";
       module = true;
     }
+    {
+      src = "./tooearly.ts";
+      module = true;
+    }
   ];
 }

@@ -279,3 +279,187 @@
   .rq-held { flex-direction: row; }
   .rq-held .rq-slot { flex: 1 1 0; }
 }
+
+/* --- "no mutation on a real kernel" ------------------------------------- */
+/* Same theme variables as the ready-queue widget; the timeline is plain DOM so
+ * the bars recolour with the page rather than being baked into a video. */
+
+.te {
+  margin: 1.5rem 0;
+  padding: 0.9rem;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface_variant);
+}
+
+.te h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--on_surface_variant);
+}
+
+.te-sub {
+  margin: 0 0 0.9rem;
+  font-size: 0.9em;
+  color: var(--on_surface_variant);
+}
+
+.te-stage {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.te-queue { flex: 0 0 auto; min-width: 9rem; }
+.te-mid   { flex: 1 1 10rem; min-width: 0; }
+.te-count { flex: 0 0 auto; text-align: right; }
+
+.te-blocks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.te-block {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  background: var(--secondary);
+  color: var(--on_secondary);
+  font-family: monospace;
+  font-size: 0.8em;
+  white-space: nowrap;
+}
+
+.te-none {
+  margin: 0.5rem 0 0;
+  font-size: 0.8em;
+  color: var(--tertiary);
+}
+
+.te-comp {
+  min-height: 2.6rem;
+  padding: 0.3rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.te-verdict {
+  margin: 0.4rem 0 0;
+  min-height: 1.2em;
+  font-family: monospace;
+  font-size: 0.8em;
+  color: var(--error);
+}
+
+.te-count-label { display: block; font-size: 0.75em; color: var(--on_surface_variant); }
+.te-count-value {
+  display: inline-block;
+  font-size: 1.6em;
+  font-variant-numeric: tabular-nums;
+  color: var(--error);
+}
+
+/* ---- the timeline ------------------------------------------------------- */
+
+.te-timeline {
+  position: relative;
+  margin-top: 1rem;
+  padding-top: 0.4rem;
+}
+
+.te-rows { position: relative; }
+
+/* Held but not yet read: from where the load issued to where it is first used. */
+.te-bar {
+  position: absolute;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--error);
+}
+
+.te-now {
+  position: absolute;
+  top: 0;
+  bottom: 1.3rem;
+  width: 0;
+  border-left: 2px dashed var(--tertiary);
+}
+
+.te-now::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -0.2rem;
+  left: 0.3rem;
+  font-size: 0.72em;
+  white-space: nowrap;
+  color: var(--tertiary);
+}
+
+.te-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--outline);
+  font-size: 0.72em;
+  color: var(--on_surface_variant);
+}
+
+.te-caption {
+  min-height: 1.3em;
+  margin: 0.8rem 0 0;
+  font-size: 0.9em;
+  color: var(--error);
+}
+
+.te-coda {
+  margin-top: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  border-left: 2px solid var(--tertiary);
+  background: var(--surface);
+  border-radius: 0 6px 6px 0;
+}
+
+.te-coda pre { margin: 0 0 0.4rem; font-size: 0.85em; }
+.te-coda p { margin: 0; font-size: 0.9em; color: var(--on_surface_variant); }
+
+.te-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--outline);
+}
+
+.te-controls button {
+  font: inherit;
+  padding: 0.25rem 0.8rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--on_surface);
+  cursor: pointer;
+}
+
+.te-controls button:hover { background: var(--hover); color: var(--on_hover); }
+
+.te-progress {
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  color: var(--on_surface_variant);
+}
+
+.te figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.85em;
+  color: var(--on_surface_variant);
+}
