@@ -12,7 +12,7 @@
 We noticed that AMD's LLVM pre-RA scheduler, run on MI450, tends to bunch many <code>ds_load</code>s (LDS load instructions) at the head of a GEMM inner loop. Upon further inspection of the CoExecScheduler, it was determined that because the scheduler greedily schedules instructions every time one is available, there are moments where the only instructions available (and therefore scheduled) were <code>ds_load</code>s for data consumed much, much later.
 </p>
 
-<p>That does two bad things at once:</p>
+<p>This does two bad things at once:</p>
 
 <ul>
   <li>it forces the WMMAs to sit behind long <code>s_wait_dscnt</code> stalls</li>
@@ -20,7 +20,7 @@ We noticed that AMD's LLVM pre-RA scheduler, run on MI450, tends to bunch many <
 </ul>
 
 <p>
-The DAG mutation in <code>AMDGPUWMMASchedule.cpp</code> adds hard constraints on where these loads may sit relative to the WMMAs that consume them. That spreads the loads out and stops the scheduler from greedily scheduling them far too early. The mutation is also (statically and naively) aware of register pressure, so those constraints form a <em>window</em> in which each load can be scheduled without causing excessive spills.
+The DAG mutation in <code>AMDGPUWMMASchedule.cpp</code> adds hard constraints on where these loads may sit relative to the WMMAs that consume them. This forces the loads to be spread out, preventing the scheduler from greedily scheduling them far too early. The mutation is also (statically and naively) aware of register pressure, so these constraints form a window upon which each load can be scheduled without causing excessive spills.
 </p>
 
 <h2>Why do we want the DAG mutation?</h2>
@@ -48,7 +48,7 @@ Everything goes through <code>AMDGPUCoExecSchedStrategy::tryCandidateCoexec</cod
 </p>
 
 <p>
-The following shows how <code>pickNodeFromQueue</code> runs. One pass is made over the whole queue. Each instruction eventually becomes the candidate (unless it is the first), and is compared against the current winner instruction. The loser of the comparison is discarded, which means it wont be scheduled for this cycle. Click any of the heuristics to read what it does.
+The following shows how <code>pickNodeFromQueue</code> runs. One pass is made over the whole queue available instructions (instructions that can be scheduled that cycle). Each instruction in the queue is compared against the current winning instruction. The loser of the comparison is discarded, which means it wont be scheduled for this cycle. Once the whole queue has been compared, the winner is chosen to be scheduled. Click any of the heuristics to read what it does.
 </p>
 
 <figure class="rq" id="rq">
@@ -64,15 +64,12 @@ The following shows how <code>pickNodeFromQueue</code> runs. One pass is made ov
         <li class="rq-block" data-kind="wmma">WMMA</li>
       </ol>
       <p class="rq-exhausted" hidden>queue exhausted</p>
+      <div class="rq-slot rq-bin" data-slot="bin">
+        <span class="rq-slot-label">discarded</span>
+      </div>
     </div>
 
     <div class="rq-arena">
-      <div class="rq-slots">
-        <div class="rq-slot" data-slot="winner"><span class="rq-slot-label">winner</span></div>
-        <div class="rq-slot" data-slot="candidate"><span class="rq-slot-label">candidate</span></div>
-        <div class="rq-slot rq-bin" data-slot="bin"><span class="rq-slot-label">discarded</span></div>
-      </div>
-
       <div class="rq-comp">
         <h4>tryCandidateCoexec</h4>
         <ol class="rq-ladder">
@@ -145,6 +142,11 @@ The following shows how <code>pickNodeFromQueue</code> runs. One pass is made ov
       </div>
 
       <p class="rq-caption" aria-live="polite"></p>
+    </div>
+
+    <div class="rq-held">
+      <div class="rq-slot" data-slot="winner"><span class="rq-slot-label">winner</span></div>
+      <div class="rq-slot" data-slot="candidate"><span class="rq-slot-label">candidate</span></div>
     </div>
   </div>
 
