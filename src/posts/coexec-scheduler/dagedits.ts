@@ -42,40 +42,25 @@ const EDITS = [
     key: "order",
     arrow: "WMMA → WMMA",
     what: "added: program order",
-    body: `Chains each WMMA to the next in program order with an artificial edge.
-           Nothing about the schedule depends on WMMAs being reordered, and fixing
-           them gives every load a stable frame of reference: once these exist,
-           "this load must not issue before W[59]" is a statement that means
-           something.`,
+    body: `Chains each WMMA to the next in program order with an artificial edge.`,
   },
   {
     key: "space",
     arrow: "ds_load → ds_load",
     what: "added: LDS bus spacing",
-    body: `Chains the loads in order of their earliest consumer, with a latency
-           equal to the LDS bus reciprocal throughput. Without it the loads may be
-           correctly placed but still issued back-to-back, which saturates the LDS
-           bus and makes the kernel memory bound instead of compute bound.`,
+    body: `Chains the loads in order of their earliest consumer, with a latency equal to the LDS bus reciprocal throughput. Without it the loads may be correctly placed but still issued back to back, which saturates the LDS bus and makes the kernel memory bound instead of compute bound.`,
   },
   {
     key: "lat",
     arrow: "ds_load → earliest WMMA",
     what: "corrected: real LDS latency",
-    body: `This edge already exists — it is the data dependency between a load and
-           the first WMMA that reads it. Only its latency is rewritten, to the real
-           LDS load latency. This is the one edit that adds nothing to the DAG, and
-           it is also the one that must be kept if the pass is ever slimmed down:
-           CoExec models a different latency by default.`,
+    body: `This edge already exists (it is the dependency between a load and the first WMMA that reads it). The latency of this edge is changed to the LDS load latency determined by the CoExecScheduler.`,
   },
   {
     key: "budget",
     arrow: "earlier WMMA → ds_load",
     what: "added: the budget window",
-    body: `The edit that does the real work. Each load fragment gets an incoming
-           edge from the earliest WMMA it is allowed to follow, which is as early
-           as the VGPR budget permits. Together with the data edge to its first
-           consumer this brackets the load into a window: late enough not to hold
-           registers for 55 WMMAs, early enough to still hide the LDS latency.`,
+    body: `Each load fragment gets an incoming edge from the earliest WMMA it is allowed to follow, which is as early as the DAG mutation's calculated VGPR budget permits. Together with the edge to its first consumer, this forces the load into a window.`,
   },
 ];
 
