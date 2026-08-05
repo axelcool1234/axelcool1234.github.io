@@ -15,5 +15,9 @@
       src = "./dagedits.ts";
       module = true;
     }
+    {
+      src = "./budget.ts";
+      module = true;
+    }
   ];
 }

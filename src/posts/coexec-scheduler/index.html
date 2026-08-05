@@ -63,7 +63,6 @@ The following shows how <code>pickNodeFromQueue</code> runs. One pass is made ov
         <li class="rq-block" data-kind="ds">ds_load</li>
         <li class="rq-block" data-kind="wmma">WMMA</li>
       </ol>
-      <p class="rq-exhausted" hidden>queue exhausted</p>
     </div>
 
     <div class="rq-arena">
@@ -199,7 +198,7 @@ python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
           <div class="te-compcol">
             <h4>tryCandidateCoexec</h4>
             <div class="te-comp"></div>
-            <p class="te-verdict"></p>
+            <p class="te-verdict">tryEffectiveStall: stall 0</p>
           </div>
           <div class="te-coda">
             <pre><code>while (Available.empty())
@@ -253,4 +252,38 @@ The DAG mutation runs after the dependency DAG is built but before <code>tryCand
     </ul>
   </div>
   <div class="de-info"></div>
+</figure>
+
+<h3>Calculating each load fragment's window</h3>
+
+<p>
+The fourth edit needs a number: the earliest WMMA a given load is allowed to follow. A mutation with a tuned constant in it is one a reviewer can reject on principle, so it is worth being precise about where that number comes from &mdash; and it is not tuned. It is measured, from the DAG, per kernel.
+</p>
+
+<p>
+Start from the <em>as late as possible</em> schedule, where every fragment is issued immediately before the WMMA that first reads it. That is the lowest register pressure any legal schedule of these loads can have, and it is also useless on its own: a load issued right before its consumer hides none of its own latency. Its peak live-VGPR count is the ceiling. Each fragment is then pulled back as early as it can go without that peak rising, and where it stops is the number in its edge.
+</p>
+
+<figure class="bw" id="bw">
+  <p class="bw-status"></p>
+  <svg class="bw-svg" viewBox="0 0 680 362" role="img"
+       aria-label="Two panels sharing a WMMA axis: one bar per ds_load fragment showing where it is issued and when it is read, above the live VGPR histogram those bars produce, with the budget ceiling drawn across it"></svg>
+  <p class="bw-sub"></p>
+  <ul class="bw-legend">
+    <li><span class="bw-key bw-kheld"></span>held live but not yet read</li>
+    <li><span class="bw-key bw-kinuse"></span>in use (first to last consumer)</li>
+    <li><span class="bw-key bw-kclamp"></span>in use, gained a WMMA &rarr; ds_load edge</li>
+  </ul>
+  <div class="bw-info"></div>
+  <div class="bw-controls">
+    <button type="button" data-act="prev" aria-label="Previous step">&larr;</button>
+    <button type="button" data-act="play">Play</button>
+    <button type="button" data-act="next" aria-label="Next step">&rarr;</button>
+    <button type="button" data-act="reset">Reset</button>
+    <span class="bw-progress"></span>
+  </div>
+  <figcaption>
+    <code class="bw-kernel"></code> &mdash; every value read from a
+    <code>-debug-only=amdgpu-wmma-sched</code> run, cross-checked against the pass's own running histogram.
+  </figcaption>
 </figure>

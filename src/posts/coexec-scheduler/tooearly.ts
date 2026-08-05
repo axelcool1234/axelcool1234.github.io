@@ -113,7 +113,11 @@ if (root) {
     await flip([...queue.querySelectorAll<HTMLElement>(".te-block"), block],
                () => comp.appendChild(block), 380);
     if (token !== mine) return;
-    verdict.textContent = "tryEffectiveStall: stall 0";
+    // The text is in the markup and never removed -- only made visible. Setting
+    // it here and clearing it afterwards let the box collapse between steps, and
+    // min-height under-reserved it by a pixel, so the timeline below hopped down
+    // and back on every single step. Same reason .te-none keeps its box.
+    verdict.style.visibility = "visible";
     await fadeIn(verdict, 180);
     if (token !== mine) return;
 
@@ -137,8 +141,7 @@ if (root) {
     await indicate(counter, 1.25, 300);
     if (token !== mine) return;
     await fadeOut(verdict, 140);
-    verdict.textContent = "";
-    verdict.style.opacity = "1";
+    verdict.style.visibility = "hidden";
 
     step++;
     paintControls();
@@ -158,7 +161,7 @@ if (root) {
     nowLine.style.left = pct(now);
     nowLine.dataset.label = `now: W[${now}]`;
     counter.textContent = "0";
-    verdict.textContent = "";
+    verdict.style.visibility = "hidden";
     verdict.style.opacity = "1";
     none.style.visibility = "";
     none.style.opacity = "1";

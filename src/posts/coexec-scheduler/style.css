@@ -88,12 +88,6 @@
   outline-offset: 3px;
 }
 
-.rq-exhausted {
-  margin: 0.5rem 0 0;
-  font-size: 0.8em;
-  color: var(--on_surface_variant);
-}
-
 /* ---- slots and bin ------------------------------------------------------ */
 
 .rq-arena {
@@ -373,7 +367,10 @@
 
 .te-verdict {
   margin: 0.4rem 0 0;
-  min-height: 1.4em;      /* reserved, so appearing text shifts nothing */
+  /* Hidden rather than absent, and hidden from the start so it does not flash
+     before the data loads. The text itself reserves the box, which min-height
+     did not do exactly -- it was a pixel short and everything below twitched. */
+  visibility: hidden;
   white-space: nowrap;
   font-family: monospace;
   font-size: 0.8em;
@@ -620,3 +617,109 @@
 .de-hint { color: var(--on_surface_variant); }
 
 .de figcaption { margin-top: 0.7rem; font-size: 0.85em; color: var(--on_surface_variant); }
+
+/* --- "calculating each load fragment's window" --------------------------- */
+/* The two-panel budget figure. Same palette as the lifelines charts it
+ * continues: red is held-but-unread, blue is in use, and the darker blue marks
+ * the fragments the budget actually clamped. */
+
+.bw {
+  margin: 1.5rem 0;
+  padding: 0.9rem;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface_variant);
+}
+
+.bw-svg { width: 100%; height: auto; display: block; }
+
+.bw-status {
+  margin: 0 0 0.5rem;
+  min-height: 1.3em;
+  font-size: 0.85em;
+  color: var(--on_surface);
+}
+
+/* Always in flow, only made visible -- see .te-verdict for why. */
+.bw-sub {
+  margin: 0.35rem 0 0;
+  min-height: 1.2em;
+  font-size: 0.82em;
+  color: var(--on_surface_variant);
+  visibility: hidden;
+}
+
+.bw-held { fill: var(--error); }
+.bw-use { fill: var(--secondary); }
+.bw-use.is-clamped { fill: var(--primary); }
+.bw-held.is-dim, .bw-use.is-dim { opacity: 0.25; }
+
+.bw-histfill { fill: var(--on_surface_variant); opacity: 0.2; }
+.bw-histline { fill: none; stroke: var(--on_surface_variant); stroke-width: 1.4; }
+
+.bw-budget line { stroke: var(--error); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.bw-budget text { font-family: monospace; font-size: 11px; fill: var(--error); }
+
+.bw-grid { stroke: var(--outline); stroke-width: 1; opacity: 0.5; }
+.bw-tick { font-family: monospace; font-size: 10px; fill: var(--on_surface_variant); }
+.bw-axis { font-size: 10.5px; fill: var(--on_surface_variant); }
+
+/* Transparent, and wider than the bar so a fragment can be picked anywhere
+ * along its row rather than only where it happens to be drawn. */
+.bw-rowhit { fill: transparent; cursor: pointer; }
+.bw-rowhit.is-on { fill: var(--on_surface); opacity: 0.07; }
+
+.bw-legend {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: grid;
+  /* One per row: at two columns the third key is left orphaned beside a gap. */
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+  gap: 0.1rem 0.6rem;
+  font-size: 0.8em;
+  color: var(--on_surface_variant);
+}
+.bw-legend li { display: flex; align-items: center; gap: 0.45rem; }
+.bw-key { flex: 0 0 auto; width: 1.1rem; height: 0.55rem; border-radius: 2px; }
+.bw-kheld { background: var(--error); }
+.bw-kinuse { background: var(--secondary); }
+.bw-kclamp { background: var(--primary); }
+
+.bw-info {
+  margin-top: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  /* Tall enough for the longest explanation (measured at 9.8rem), so clicking
+     between fragments does not walk the controls up and down the page. */
+  min-height: 10rem;
+  border-left: 2px solid var(--primary);
+  background: var(--surface);
+  border-radius: 0 6px 6px 0;
+}
+.bw-info h4 { margin: 0 0 0.4rem; font-size: 0.92em; font-family: monospace; }
+.bw-info p { margin: 0; font-size: 0.9em; }
+.bw-hint { color: var(--on_surface_variant); }
+
+.bw-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--outline);
+}
+.bw-controls button {
+  font: inherit;
+  font-size: 0.85em;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--on_surface);
+  cursor: pointer;
+}
+.bw-controls button:hover:not(:disabled) { border-color: var(--primary); }
+.bw-controls button:disabled { opacity: 0.4; cursor: default; }
+.bw-progress { font-size: 0.8em; color: var(--on_surface_variant); }
+
+.bw figcaption { margin-top: 0.7rem; font-size: 0.8em; color: var(--on_surface_variant); }

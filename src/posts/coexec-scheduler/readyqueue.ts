@@ -29,7 +29,6 @@ const root = document.getElementById("rq");
 if (root) {
   const q = <T extends Element>(sel: string) => root.querySelector<T>(sel)!;
   const queue = q<HTMLElement>(".rq-blocks");
-  const exhausted = q<HTMLElement>(".rq-exhausted");
   const caption = q<HTMLElement>(".rq-caption");
   const progress = q<HTMLElement>(".rq-progress");
   const winnerSlot = q<HTMLElement>('[data-slot="winner"]');
@@ -180,7 +179,6 @@ if (root) {
       if (token !== mine) return;
       step++;
       setProgress();
-      if (!queue.querySelector(".rq-block")) await fadeIn(exhausted, 260);
       return;
     }
 
@@ -207,8 +205,6 @@ if (root) {
     [winnerSlot, candSlot, bin].forEach((s) =>
       s.querySelectorAll(".rq-block").forEach((b) => b.remove()));
     queue.replaceChildren(...home.map((b) => b.cloneNode(true) as HTMLElement));
-    exhausted.hidden = true;
-    exhausted.style.opacity = "";
     rungs.forEach((r) => r.classList.remove("is-decided"));
     cursor.hidden = true;
     cursor.classList.remove("is-decided");
