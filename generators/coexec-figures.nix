@@ -142,6 +142,35 @@ pkgs.runCommand "coexec-figures"
       cp "${revealjs}/$rel" "$dest/reveal/$rel"
     done
 
+  # Every video here was written by ffmpeg, which converts RGB->YUV with BT.601
+  # but records no colour metadata. A browser seeing an untagged HD video assumes
+  # BT.709, decodes with the wrong matrix, and the flat saturated red comes out
+  # (253,85,67) instead of (239,68,68) -- visibly a different red from the still
+  # PNG on the preceding slide, which is unambiguous sRGB.
+  #
+  # So say what was actually done: stamp BT.601 (code 6) into the bitstream. This
+  # is a metadata rewrite with -c copy, not a re-encode, so it costs nothing and
+  # adds no second generation of loss. Re-encoding to BT.709 instead measured
+  # worse on every colour, for exactly that reason.
+  for v in "$dest"/deck_assets/*.mp4; do
+    # -f mp4 because the temp name has no recognised extension, and it must not
+    # end in .mp4 or this loop's own glob would pick it up mid-iteration.
+    ffmpeg -loglevel error -y -i "$v" -c copy -f mp4 \
+      -bsf:v h264_metadata=colour_primaries=6:transfer_characteristics=6:matrix_coefficients=6 \
+      "$v.tagged"
+    mv "$v.tagged" "$v"
+  done
+
+  # An untagged file must never ship again: the symptom is subtle enough to
+  # survive review, and only shows up next to the still.
+  untagged=0
+  for v in "$dest"/deck_assets/*.mp4; do
+    cs=$(ffprobe -v error -select_streams v:0 -show_entries stream=color_space -of csv=p=0 "$v")
+    [ "$cs" = smpte170m ] || { echo "ERROR: $(basename "$v") colour_space=$cs" >&2; untagged=1; }
+  done
+  [ "$untagged" = 0 ] || exit 1
+  echo "colour: $(ls "$dest"/deck_assets/*.mp4 | wc -l) videos tagged BT.601"
+
   python3 ${checkDeck} "$dest"
 
   slides=$(grep -c "<section" "$dest/deck.html" || true)

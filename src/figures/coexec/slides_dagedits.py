@@ -72,7 +72,7 @@ class DagEditsSlides(Slide):
 
         # these already exist: ds_load -> its earliest consuming WMMA
         pre = VGroup(edge(l1, wm[2], DIM, 1.6), edge(l2, wm[3], DIM, 1.6))
-        prelab = Text("data edges already in the DAG", font_size=15, color=DIM)
+        prelab = Text("edges already in the DAG", font_size=15, color=DIM)
         prelab.to_edge(DOWN, buff=0.45)
         self.play(*[GrowArrow(a) for a in pre], FadeIn(prelab))
         self.wait(0.6)
