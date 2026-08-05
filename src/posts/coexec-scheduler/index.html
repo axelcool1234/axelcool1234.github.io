@@ -48,7 +48,7 @@ Everything goes through <code>AMDGPUCoExecSchedStrategy::tryCandidateCoexec</cod
 </p>
 
 <p>
-The widget below shows how <code>pickNodeFromQueue</code> runs. One pass is made over the whole queue - each instruction in turn becomes the <em>candidate</em> and is compared against the current <em>winner</em> instruction, and the loser is discarded. <strong>Click any heuristic to read what it does.</strong>
+The following shows how <code>pickNodeFromQueue</code> runs. One pass is made over the whole queue. Each instruction eventually becomes the candidate (unless it is the first), and is compared against the current winner instruction. The loser of the comparison is discarded, which means it wont be scheduled for this cycle. Click any of the heuristics to read what it does.
 </p>
 
 <figure class="rq" id="rq">

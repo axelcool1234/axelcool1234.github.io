@@ -107,14 +107,19 @@ if (root) {
   let running = false;
   let token = 0;           // bumped on reset, so a running play() bails out
 
-  const buttons = ["play", "step"].map(
-    (a) => root.querySelector<HTMLButtonElement>(`[data-act="${a}"]`)!);
+  const playBtn = root.querySelector<HTMLButtonElement>('[data-act="play"]')!;
+  const stepBtn = root.querySelector<HTMLButtonElement>('[data-act="step"]')!;
+
+  let playing = false;    // the play loop is running
+  let stopping = false;   // Stop was pressed; finish this round, then halt
 
   // Clicks during an in-flight round used to be dropped with no feedback, which
-  // read as an unresponsive widget.
-  function setBusy(on: boolean) {
-    running = on;
-    buttons.forEach((b) => { b.disabled = on || (!on && finished()); });
+  // read as an unresponsive widget. Play doubles as Stop while it runs, so it
+  // stays enabled -- only a single in-flight Step locks it out.
+  function paintControls() {
+    playBtn.textContent = playing ? "Stop" : "Play";
+    playBtn.disabled = running && !playing;
+    stepBtn.disabled = playing || running || finished();
   }
 
   function setProgress() {
@@ -207,28 +212,49 @@ if (root) {
     setProgress();
   }
 
-  root.querySelector('[data-act="step"]')!.addEventListener("click", async () => {
-    if (running || finished()) return;
-    setBusy(true);
+  stepBtn.addEventListener("click", async () => {
+    if (running || playing || finished()) return;
+    running = true;
+    paintControls();
     await advance();
-    setBusy(false);
+    running = false;
+    paintControls();
   });
 
-  root.querySelector('[data-act="play"]')!.addEventListener("click", async () => {
+  playBtn.addEventListener("click", async () => {
+    // Second press: ask the loop to halt. It finishes the round it is in rather
+    // than cutting a block off mid-flight, so the widget always comes to rest on
+    // a step boundary.
+    if (playing) {
+      stopping = true;
+      return;
+    }
     if (running) return;
     if (finished()) reset();
-    setBusy(true);
+
+    playing = true;
+    stopping = false;
+    paintControls();
     const mine = token;
-    while (!finished() && token === mine) {
+    while (!finished() && token === mine && !stopping) {
+      running = true;
       await advance();
+      running = false;
+      if (stopping || token !== mine) break;
       await wait(260);
     }
-    setBusy(false);
+    playing = false;
+    stopping = false;
+    running = false;
+    paintControls();
   });
 
   root.querySelector('[data-act="reset"]')!.addEventListener("click", () => {
     reset();
-    setBusy(false);
+    playing = false;
+    stopping = false;
+    running = false;
+    paintControls();
   });
 
 
@@ -255,4 +281,5 @@ if (root) {
   });
 
   setProgress();
+  paintControls();
 }
