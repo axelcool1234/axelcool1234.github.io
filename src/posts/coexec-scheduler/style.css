@@ -76,11 +76,6 @@
   outline-offset: 2px;
 }
 
-.rq-block.is-gone {
-  opacity: 0;
-  transition: opacity 200ms linear;
-}
-
 .rq-block.is-issued {
   outline: 2px solid var(--tertiary);
   outline-offset: 3px;
@@ -133,6 +128,24 @@
   margin: 0;
   padding: 0;
   counter-reset: rung;
+  position: relative;   /* positioning context for .rq-cursor */
+}
+
+/* One highlight that slides and stretches down the cascade, rather than each
+ * rung colouring in turn -- the single travelling cursor is what shows the
+ * cascade stopping at a rung instead of running the whole list. */
+.rq-cursor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 2px solid var(--on_surface_variant);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.rq-cursor.is-decided {
+  border-color: var(--error);
 }
 
 .rq-ladder li {
@@ -165,12 +178,7 @@
   border-color: var(--outline);
 }
 
-/* the cascade walking down, and the rung that returns */
-.rq-ladder li.is-scanning button {
-  color: var(--on_surface);
-  border-color: var(--outline);
-}
-
+/* the rung the cascade returned at */
 .rq-ladder li.is-decided button {
   color: var(--error);
   border-color: var(--error);

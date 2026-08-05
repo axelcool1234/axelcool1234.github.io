@@ -9,9 +9,11 @@
 // heuristics can be clicked for an explanation -- neither of which a recorded
 // animation can do.
 //
-// Motion uses FLIP (measure, move in the DOM, invert, play) rather than absolute
-// coordinates, so the layout stays honest: blocks really do move between the
-// queue, the slots and the bin, and it reflows correctly at any width.
+// Every visible change goes through anim.ts rather than a class toggle, because
+// the manim original animates all of them: the queue closing up, the highlight
+// travelling down the cascade, the winner swelling, the loser shrinking away.
+
+import { fadeIn, fadeOut, flip, indicate, dissolve, play, wait, reduced, smooth } from "./anim.js";
 
 // (candidate index, rung that decides, does the candidate win?)
 const ROUNDS: [number, number, boolean][] = [
@@ -32,33 +34,71 @@ if (root) {
   const winnerSlot = q<HTMLElement>('[data-slot="winner"]');
   const candSlot = q<HTMLElement>('[data-slot="candidate"]');
   const bin = q<HTMLElement>('[data-slot="bin"]');
+  const ladder = q<HTMLElement>(".rq-ladder");
   const rungs = Array.from(root.querySelectorAll<HTMLElement>(".rq-ladder li"));
-  const blocks = Array.from(root.querySelectorAll<HTMLElement>(".rq-block"));
   // the button label, not li.textContent -- the li also contains the explanation
   const rungName = rungs.map((li) => li.querySelector("button")!.textContent!.trim());
-  const home = blocks.map((b) => b.cloneNode(true) as HTMLElement);
+  const home = Array.from(root.querySelectorAll<HTMLElement>(".rq-block"))
+    .map((b) => b.cloneNode(true) as HTMLElement);
 
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const sleep = (ms: number) =>
-    new Promise((r) => setTimeout(r, reduced ? 0 : ms));
+  // The travelling highlight. One element that slides and stretches between
+  // rungs, as in the scene -- colouring each rung in turn instead would lose
+  // the sense of a single cursor walking down and stopping.
+  const cursor = document.createElement("div");
+  cursor.className = "rq-cursor";
+  cursor.hidden = true;
+  ladder.appendChild(cursor);
 
-  // --- FLIP ---------------------------------------------------------------
-  // Move `el` into `to` and animate from wherever it used to be. Without this
-  // the blocks would teleport, and the movement is the explanation.
-  function move(el: HTMLElement, to: HTMLElement): Promise<void> {
-    const first = el.getBoundingClientRect();
-    to.appendChild(el);
-    const last = el.getBoundingClientRect();
-    const dx = first.left - last.left;
-    const dy = first.top - last.top;
-    if (reduced || (!dx && !dy)) return Promise.resolve();
-    el.style.transition = "none";
-    el.style.transform = `translate(${dx}px, ${dy}px)`;
-    // force a reflow so the browser does not coalesce the two styles
-    void el.offsetWidth;
-    el.style.transition = "transform 380ms cubic-bezier(.4,0,.2,1)";
-    el.style.transform = "";
-    return new Promise((r) => setTimeout(r, 380));
+  // Every block currently on stage, so FLIP can animate the ones that reflow.
+  const allBlocks = () => Array.from(root.querySelectorAll<HTMLElement>(".rq-block"));
+
+  function move(el: HTMLElement, to: HTMLElement, runTime = 420) {
+    return flip(allBlocks(), () => to.appendChild(el), runTime);
+  }
+
+  async function say(text: string, kind = "") {
+    if (caption.textContent) await fadeOut(caption, 140);
+    caption.textContent = text;
+    caption.className = "rq-caption" + (kind ? ` is-${kind}` : "");
+    if (text) await fadeIn(caption, 200);
+    else caption.style.opacity = "1";
+  }
+
+  function placeCursor(i: number, alpha = 1, from?: DOMRect) {
+    const r = rungs[i];
+    const top = r.offsetTop;
+    const h = r.offsetHeight;
+    if (!from || alpha >= 1) {
+      cursor.style.top = `${top}px`;
+      cursor.style.height = `${h}px`;
+      return;
+    }
+    cursor.style.top = `${from.top + (top - from.top) * alpha}px`;
+    cursor.style.height = `${from.height + (h - from.height) * alpha}px`;
+  }
+
+  // Walk the cascade down to `stop`. The walk IS the point: the rungs below
+  // `stop` are never reached, which is what makes the cascade an argument.
+  async function scan(stop: number, mine: number) {
+    cursor.classList.remove("is-decided");
+    placeCursor(0);
+    await fadeIn(cursor, 150);
+    for (let i = 1; i <= stop; i++) {
+      if (token !== mine) return;
+      const from = { top: rungs[i - 1].offsetTop, height: rungs[i - 1].offsetHeight } as DOMRect;
+      await play((a) => placeCursor(i, a, from), 150, smooth);
+    }
+    if (token !== mine) return;
+    cursor.classList.add("is-decided");
+    rungs[stop].classList.add("is-decided");
+    await indicate(cursor, 1.04, 260);
+  }
+
+  async function clearCursor() {
+    rungs.forEach((r) => r.classList.remove("is-decided"));
+    if (!cursor.hidden) await fadeOut(cursor, 140);
+    cursor.hidden = true;
+    cursor.classList.remove("is-decided");
   }
 
   // --- state --------------------------------------------------------------
@@ -77,32 +117,9 @@ if (root) {
     buttons.forEach((b) => { b.disabled = on || (!on && finished()); });
   }
 
-  function setCaption(text: string, kind = "") {
-    caption.textContent = text;
-    caption.className = "rq-caption" + (kind ? ` is-${kind}` : "");
-  }
-
   function setProgress() {
     const total = ROUNDS.length + 1;
     progress.textContent = step === 0 ? "" : `${Math.min(step, total)} / ${total}`;
-  }
-
-  function clearRungs() {
-    rungs.forEach((r) => r.classList.remove("is-scanning", "is-decided"));
-  }
-
-  // Walk the cascade down to `stop`, pausing on each rung, then light it red.
-  // The walk IS the point: the rungs below `stop` are never reached.
-  async function scan(stop: number, mine: number) {
-    for (let i = 0; i <= stop; i++) {
-      if (token !== mine) return;
-      clearRungs();
-      rungs[i].classList.add("is-scanning");
-      await sleep(75);
-    }
-    if (token !== mine) return;
-    rungs[stop].classList.remove("is-scanning");
-    rungs[stop].classList.add("is-decided");
   }
 
   async function advance(): Promise<void> {
@@ -114,7 +131,7 @@ if (root) {
       await move(first, winnerSlot);
       if (token !== mine) return;
       winner = first;
-      setCaption("FirstValid: no comparison", "ok");
+      await say("FirstValid: no comparison", "ok");
       step = 1;
       setProgress();
       return;
@@ -130,36 +147,39 @@ if (root) {
 
       await scan(rung, mine);
       if (token !== mine) return;
-      setCaption(`${rungName[rung]} decides`, "hot");
+      await say(`${rungName[rung]} decides`, "hot");
 
       const win = candWins ? cand : winner;
       const lose = candWins ? winner : cand;
-      win.classList.add("is-flash");
-      await sleep(320);
+      await indicate(win);
       if (token !== mine) return;
-      win.classList.remove("is-flash");
 
-      await move(lose, bin);
+      await move(lose, bin, 380);
       if (token !== mine) return;
-      lose.classList.add("is-gone");
-      await sleep(220);
+      await dissolve(lose);
       if (token !== mine) return;
-      lose.remove();
+      // Removing it reflows the bin, so let the others settle into place.
+      await flip(allBlocks().filter((b) => b !== lose), () => lose.remove(), 220);
 
       if (candWins) await move(win, winnerSlot);
       if (token !== mine) return;
       winner = win;
 
-      clearRungs();
+      await clearCursor();
+      if (token !== mine) return;
       step++;
       setProgress();
-      if (!queue.querySelector(".rq-block")) exhausted.hidden = false;
+      if (!queue.querySelector(".rq-block")) await fadeIn(exhausted, 260);
       return;
     }
 
     // queue drained: only now is anything actually issued
-    setCaption("the winner is scheduled", "ok");
-    if (winner) winner.classList.add("is-issued");
+    await say("the winner is scheduled", "ok");
+    if (winner) {
+      winner.classList.add("is-issued");
+      await indicate(winner, 1.12, 460);
+    }
+    if (token !== mine) return;
     step++;
     setProgress();
   }
@@ -177,8 +197,13 @@ if (root) {
       s.querySelectorAll(".rq-block").forEach((b) => b.remove()));
     queue.replaceChildren(...home.map((b) => b.cloneNode(true) as HTMLElement));
     exhausted.hidden = true;
-    clearRungs();
-    setCaption("");
+    exhausted.style.opacity = "";
+    rungs.forEach((r) => r.classList.remove("is-decided"));
+    cursor.hidden = true;
+    cursor.classList.remove("is-decided");
+    caption.textContent = "";
+    caption.className = "rq-caption";
+    caption.style.opacity = "";
     setProgress();
   }
 
@@ -196,7 +221,7 @@ if (root) {
     const mine = token;
     while (!finished() && token === mine) {
       await advance();
-      await sleep(320);
+      await wait(260);
     }
     setBusy(false);
   });
@@ -223,7 +248,7 @@ if (root) {
       if (!open) {
         li.classList.add("is-open");
         btn.setAttribute("aria-expanded", "true");
-        doc.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+        doc.scrollIntoView({ block: "nearest", behavior: reduced() ? "auto" : "smooth" });
       }
     });
   });
