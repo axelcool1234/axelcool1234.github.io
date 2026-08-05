@@ -262,7 +262,7 @@ if (root) {
     selected = i;
     rowHit.forEach((r, k) => r.classList.toggle("is-on", k === i));
     if (i === -1) {
-      info.innerHTML = `<p class="bw-hint">Click any fragment to see where its window came from.</p>`;
+      info.innerHTML = `<p class="bw-hint">Click any fragment to see information about its window.</p>`;
     } else {
       const f = D!.frags[i];
       // Three points, in the order the pass establishes them: the window ALAP
@@ -352,20 +352,32 @@ if (root) {
     select(-1);
   });
 
-  fetch("./budget-data.json")
-    .then((r) => r.json())
-    .then((d: Data) => {
-      D = d;
-      NF = d.frags.length;
-      NW = d.nwmma;
-      svg.setAttribute("viewBox", `0 0 ${VB_W} ${VB_H}`);
-      q<HTMLElement>(".bw-kernel").textContent = d.kernel;
-      q<HTMLElement>(".bw-sub").textContent =
-        `${d.frags.filter((f) => f.clamped).length} of ${NF} fragments needed an edge`;
-      build();
-      reset();
-    })
-    .catch(() => {
+  // The catch wraps ONLY the load. It used to wrap the render too, so a mistake
+  // in build() surfaced as "could not load budget-data.json" while the file was
+  // being served with a 200 -- which is a lie that costs an hour to see through.
+  // Anything wrong below the try is now a real, visible page error.
+  async function boot() {
+    let d: Data;
+    try {
+      const r = await fetch("./budget-data.json");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      d = await r.json();
+    } catch {
       status.textContent = "could not load budget-data.json";
-    });
+      return;
+    }
+    D = d;
+    NF = d.frags.length;
+    NW = d.nwmma;
+    svg.setAttribute("viewBox", `0 0 ${VB_W} ${VB_H}`);
+    // Optional: the caption naming the kernel is not always in the markup.
+    const kernel = root!.querySelector<HTMLElement>(".bw-kernel");
+    if (kernel) kernel.textContent = d.kernel;
+    sub.textContent =
+      `${d.frags.filter((f) => f.clamped).length} of ${NF} fragments needed an edge`;
+    build();
+    reset();
+  }
+
+  void boot();
 }

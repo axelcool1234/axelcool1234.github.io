@@ -227,8 +227,17 @@ if (root) {
 
   q<HTMLElement>('[data-act="reset"]').addEventListener("click", () => reset());
 
+  // See budget.ts: the catch must cover the load only, or a render bug reports
+  // itself as a missing file.
   fetch("./sched-data.json")
-    .then((r) => r.json())
+    .then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .catch((e) => {
+      q<HTMLElement>(".te-sub").textContent = "could not load sched-data.json";
+      throw e;
+    })
     .then((d) => {
       FR = d.clamped as Frag[];
       WMAX = d.wmax;
@@ -236,8 +245,5 @@ if (root) {
       FR.sort((a, b) => a.issue_off - b.issue_off);
       rows.style.height = `${FR.length * 14}px`;
       reset();
-    })
-    .catch(() => {
-      q<HTMLElement>(".te-sub").textContent = "could not load sched-data.json";
     });
 }
