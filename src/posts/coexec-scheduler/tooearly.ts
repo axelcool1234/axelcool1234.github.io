@@ -63,12 +63,17 @@ if (root) {
   }
 
   function buildQueue() {
+    queue.style.minHeight = "";
     queue.replaceChildren(...FR.map((f) => {
       const li = document.createElement("li");
       li.className = "te-block";
       li.textContent = `ds_load → W[${f.cmin}]`;
       return li;
     }));
+    // Reading offsetHeight forces layout, so this is the height with all seven
+    // present; without it the column shrinks block by block and drags the
+    // timeline up the page as the queue drains.
+    queue.style.minHeight = `${queue.offsetHeight}px`;
   }
 
   function moveNow(to: number, runTime = 420) {
@@ -88,7 +93,12 @@ if (root) {
     const block = queue.querySelector<HTMLElement>(".te-block");
     if (!block) return;
 
-    if (step === 0 && !none.hidden) await fadeOut(none, 200).then(() => { none.hidden = true; });
+    if (step === 0 && none.style.visibility !== "hidden") {
+      // keep its box: removing it from flow shrinks the column and shifts
+      // everything below by ~66px
+      await fadeOut(none, 200);
+      none.style.visibility = "hidden";
+    }
     if (token !== mine) return;
 
     await moveNow(f.issue_off, step === 0 ? 520 : 380);
@@ -106,7 +116,9 @@ if (root) {
     // and out onto the timeline as a held-but-unread span
     const bar = document.createElement("div");
     bar.className = "te-bar";
-    bar.style.top = `${step * 14}px`;
+    // bottom-up: the first fragment issued sits at the bottom, so the stack
+    // grows toward the reader rather than pushing everything down
+    bar.style.top = `${(FR.length - 1 - step) * 14}px`;
     bar.style.left = pct(f.issue_off);
     bar.style.width = "0%";
     bar.title = `${f.vgprs} VGPRs held from W[${f.issue_off}] until W[${f.cmin}]`;
@@ -149,15 +161,16 @@ if (root) {
     buildQueue();
     rows.replaceChildren();
     comp.querySelectorAll(".te-block").forEach((b) => b.remove());
-    nowLine.style.left = "0%";
-    nowLine.dataset.label = "now: W[0]";
+    now = FR.length ? FR[0].issue_off : 0;
+    nowLine.style.left = pct(now);
+    nowLine.dataset.label = `now: W[${now}]`;
     counter.textContent = "0";
     verdict.textContent = "";
     verdict.style.opacity = "1";
     caption.textContent = "";
     caption.style.opacity = "1";
     coda.hidden = true;
-    none.hidden = false;
+    none.style.visibility = "";
     none.style.opacity = "1";
     paintControls();
   }

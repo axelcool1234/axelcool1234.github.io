@@ -110,18 +110,22 @@
  * label-sized box read as an afterthought next to the queue. */
 .rq-held .rq-slot {
   flex: 1 1 0;
-  justify-content: center;
   max-height: 9rem;
 }
 
+/* The label is pinned rather than laid out with the block: as a flex item it
+ * was centred together with whatever the slot held, so it jumped every time a
+ * block arrived or left. */
 .rq-slot {
+  position: relative;
   min-height: 3.4rem;
-  padding: 0.3rem;
+  padding: 1.5rem 0.3rem 0.3rem;
   border: 1px solid var(--outline);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
 }
 
@@ -133,6 +137,11 @@
 }
 
 .rq-slot-label {
+  position: absolute;
+  top: 0.35rem;
+  left: 0;
+  right: 0;
+  text-align: center;
   font-size: 0.72em;
   color: var(--on_surface_variant);
 }
@@ -312,7 +321,7 @@
   flex-wrap: wrap;
 }
 
-.te-queue { flex: 0 0 auto; min-width: 9rem; }
+.te-queue { flex: 0 0 11rem; }   /* fixed: content-sized, it re-widths as blocks leave */
 .te-mid   { flex: 1 1 10rem; min-width: 0; }
 .te-count { flex: 0 0 auto; text-align: right; }
 
@@ -353,7 +362,8 @@
 
 .te-verdict {
   margin: 0.4rem 0 0;
-  min-height: 1.2em;
+  min-height: 1.4em;      /* reserved, so appearing text shifts nothing */
+  white-space: nowrap;
   font-family: monospace;
   font-size: 0.8em;
   color: var(--error);
