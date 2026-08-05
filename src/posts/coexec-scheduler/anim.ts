@@ -28,8 +28,16 @@ export const rushFrom = (t: number): number => 2 * smooth(t / 2 + 0.5) - 1;
 export const thereAndBack = (t: number): number =>
   t < 0.5 ? smooth(2 * t) : smooth(2 * (1 - t));
 
-export const reduced = (): boolean =>
-  matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Motion is opt-out, seeded from the OS preference but overridable in the UI.
+// This widget is a special case: the movement is the explanation, not decoration,
+// so honouring "reduce motion" by removing it entirely leaves nothing to read.
+// The compromise is that motion-off jumps between states but still holds each
+// one, and there is a visible toggle either way.
+let motionOn = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+export const motionEnabled = (): boolean => motionOn;
+export const setMotion = (on: boolean): void => { motionOn = on; };
+export const reduced = (): boolean => !motionOn;
 
 // --- the runner ------------------------------------------------------------
 
@@ -38,9 +46,15 @@ export type Tick = (alpha: number) => void;
 // Run `tick` from alpha 0 to 1 over runTime ms. Resolves when finished, so a
 // scene reads as a straight sequence of awaits, like manim's self.play.
 export function play(tick: Tick, runTime = 500, rate = smooth): Promise<void> {
-  if (reduced() || runTime <= 0) {
+  if (runTime <= 0) {
     tick(1);
     return Promise.resolve();
+  }
+  if (!motionOn) {
+    // Snap to the end state, but still hold it: returning immediately makes the
+    // whole sequence blink past in a tenth of a second with nothing legible.
+    tick(1);
+    return wait(Math.min(runTime, 140));
   }
   return new Promise((resolve) => {
     const start = performance.now();
@@ -55,7 +69,7 @@ export function play(tick: Tick, runTime = 500, rate = smooth): Promise<void> {
 }
 
 export const wait = (ms: number): Promise<void> =>
-  new Promise((r) => setTimeout(r, reduced() ? 0 : ms));
+  new Promise((r) => setTimeout(r, ms));
 
 // --- FLIP ------------------------------------------------------------------
 
@@ -131,6 +145,6 @@ export function laggedStart(
   lag = 90,
 ): Promise<void[]> {
   return Promise.all(
-    make.map((fn, i) => wait(reduced() ? 0 : i * lag).then(() => fn(i))),
+    make.map((fn, i) => wait(motionOn ? i * lag : 0).then(() => fn(i))),
   );
 }

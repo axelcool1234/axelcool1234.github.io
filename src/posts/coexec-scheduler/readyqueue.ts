@@ -13,7 +13,8 @@
 // the manim original animates all of them: the queue closing up, the highlight
 // travelling down the cascade, the winner swelling, the loser shrinking away.
 
-import { fadeIn, fadeOut, flip, indicate, dissolve, play, wait, reduced, smooth } from "./anim.js";
+import { fadeIn, fadeOut, flip, indicate, dissolve, play, wait, reduced,
+         motionEnabled, setMotion, smooth } from "./anim.js";
 
 // (candidate index, rung that decides, does the candidate win?)
 const ROUNDS: [number, number, boolean][] = [
@@ -230,6 +231,20 @@ if (root) {
     reset();
     setBusy(false);
   });
+
+  // The animation here is the explanation, so anyone who has "reduce motion" set
+  // system-wide can still opt back in -- and anyone who does not can opt out.
+  const motionBtn = root.querySelector<HTMLButtonElement>('[data-act="motion"]')!;
+  function paintMotion() {
+    const on = motionEnabled();
+    motionBtn.textContent = `Motion: ${on ? "on" : "off"}`;
+    motionBtn.setAttribute("aria-pressed", String(on));
+  }
+  motionBtn.addEventListener("click", () => {
+    setMotion(!motionEnabled());
+    paintMotion();
+  });
+  paintMotion();
 
   // --- heuristic explanations --------------------------------------------
   // The prose lives in the HTML, so it is readable and indexable with JS off;
