@@ -23,5 +23,9 @@
       src = "./dagrun.ts";
       module = true;
     }
+    {
+      src = "./lifelines.ts";
+      module = true;
+    }
   ];
 }

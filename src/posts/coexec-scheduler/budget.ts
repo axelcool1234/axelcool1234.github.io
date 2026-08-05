@@ -20,8 +20,8 @@
 // "where did W[59] come from?" for a specific fragment rather than in general.
 
 import { play, wait, smooth, beginSkip, endSkip } from "./anim.js";
-
-const SVG_NS = "http://www.w3.org/2000/svg";
+import { Geom, svgEl, xScaleFor, rowsIn, drawXAxis, drawYLabel, drawYTicks,
+         drawRowTicks, niceTicks, stepPath } from "./chart.js";
 
 interface Frag {
   vgprs: number;
@@ -43,12 +43,14 @@ interface Data {
   frags: Frag[];
 }
 
-// Geometry, in viewBox units. Two panels sharing one x scale, as the figure
-// does -- the whole point is that a bar moving left raises the curve under it.
-const VB_W = 680, VB_H = 362;
-const X0 = 54, X1 = 672;
-const BARS_TOP = 10, BARS_BOT = 220;   // the bar panel; ROW is per-kernel
-const HIST_TOP = 246, HIST_BOT = 320;
+// Two panels sharing one x scale, as the figure does -- the whole point is that
+// a bar moving left raises the curve under it.
+const G: Geom = {
+  vbW: 680, vbH: 362,
+  x0: 54, x1: 672,
+  barsTop: 10, barsBot: 220,
+  histTop: 246, histBot: 320,
+};
 const TICKS = [0, 32, 64, 96, 127];
 
 const root = document.getElementById("bw");
@@ -73,20 +75,13 @@ if (root) {
   let selected = -1;
   let running = false, playing = false, stopping = false, token = 0, pending = 0;
 
-  const el = (name: string, attrs: Record<string, string | number>): SVGElement => {
-    const e = document.createElementNS(SVG_NS, name) as SVGElement;
-    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
-    return e;
-  };
+  const el = svgEl;
 
-  const x = (w: number) => X0 + (w / (NW - 1)) * (X1 - X0);
-  // Row 0 at the BOTTOM, as the figure has it -- matplotlib's barh(r) counts up
-  // from the x axis. The fragments are in issue order, so the earliest end up
-  // nearest the histogram panel they feed.
-  const rowY = (r: number) => BARS_TOP + (NF - 1 - r) * ROW;
+  let x = xScaleFor(G, NW);
+  let rowY = (r: number) => G.barsTop + r;
   // Same headroom as the figure: 30% above the budget, so the line sits high in
   // the panel and the curve has somewhere to go if it ever did rise.
-  const hy = (v: number) => HIST_BOT - (v / (D!.budget * 1.3)) * (HIST_BOT - HIST_TOP);
+  const hy = (v: number) => G.histBot - (v / (D!.budget * 1.3)) * (G.histBot - G.histTop);
 
   // Built once and mutated, rather than redrawn: a fragment slide animates both
   // panels at 60fps and rebuilding the DOM each frame would also drop the
@@ -105,36 +100,17 @@ if (root) {
     return h;
   }
 
-  function stepPath(h: number[], close: boolean): string {
-    let d = "";
-    for (let p = 0; p < NW; p++) {
-      const y = hy(h[p]);
-      d += `${p === 0 ? "M" : "L"}${x(p).toFixed(1)},${y.toFixed(1)}`;
-      d += `L${x(Math.min(p + 1, NW - 1)).toFixed(1)},${y.toFixed(1)}`;
-    }
-    if (close) d += `L${x(NW - 1).toFixed(1)},${HIST_BOT}L${X0},${HIST_BOT}Z`;
-    return d;
-  }
+  const hist = (h: number[], close: boolean) =>
+    stepPath(h, { x, y: hy, baseY: close ? G.histBot : undefined, x0: G.x0 });
 
   function build() {
     svg.replaceChildren();
 
-    for (const t of TICKS) {
-      svg.appendChild(el("line", {
-        class: "bw-grid", x1: x(t), y1: BARS_TOP - 2, x2: x(t), y2: HIST_BOT,
-      }));
-      // The end labels are anchored inward: centred, W[0] hangs off the left of
-      // the viewBox and W[127] gets clipped by the right edge.
-      const lab = el("text", {
-        class: "bw-tick", x: x(t), y: HIST_BOT + 14,
-        "text-anchor": t === TICKS[0] ? "start" : t === TICKS[TICKS.length - 1] ? "end" : "middle",
-      });
-      lab.textContent = `W[${t}]`;
-      svg.appendChild(lab);
-    }
-    const xlab = el("text", { class: "bw-axis", x: (X0 + X1) / 2, y: HIST_BOT + 32, "text-anchor": "middle" });
-    xlab.textContent = "WMMAs issued";
-    svg.appendChild(xlab);
+    drawXAxis(svg, G, { x, ticks: TICKS, title: "WMMAs issued" });
+    // The VGPR scale was unlabelled: the budget line named its own value but
+    // nothing else on the axis had a number, so the curve could only be read
+    // as a shape. Round values, so it can be read as "about 200".
+    drawYTicks(svg, G, { values: niceTicks(D!.budget * 1.3), y: hy });
 
     heldR = []; useR = []; rowHit = [];
     D!.frags.forEach((f, i) => {
@@ -144,7 +120,7 @@ if (root) {
         y: rowY(i), height: BAR_H, x: x(f.cmin), width: Math.max(0, x(f.maxpos) - x(f.cmin)),
       });
       const hit = el("rect", {
-        class: "bw-rowhit", x: X0, y: rowY(i) - (ROW - BAR_H) / 2, width: X1 - X0, height: ROW,
+        class: "bw-rowhit", x: G.x0, y: rowY(i) - (ROW - BAR_H) / 2, width: G.x1 - G.x0, height: ROW,
       });
       hit.addEventListener("pointerdown", (ev) => {
         ev.stopPropagation();
@@ -155,52 +131,24 @@ if (root) {
       heldR.push(held); useR.push(use); rowHit.push(hit);
     });
 
-    // Row numbers, so a fragment named in the text below can be found in the
-    // chart above -- the figure has them and they matter more here, where the
-    // rows are clickable.
-    for (let r = 0; r < NF; r += 5) {
-      const rl = el("text", {
-        class: "bw-tick", x: X0 - 6, y: rowY(r) + BAR_H - 0.5, "text-anchor": "end",
-      });
-      rl.textContent = String(r);
-      svg.appendChild(rl);
-    }
-
-    const ylab = el("text", {
-      class: "bw-axis", x: 12, y: rowY(NF / 2),
-      "text-anchor": "middle", transform: `rotate(-90 12 ${rowY(NF / 2)})`,
-    });
-    ylab.textContent = "ds_load fragment";
-    svg.appendChild(ylab);
+    drawRowTicks(svg, G, { n: NF, y: rowY, barH: BAR_H, row: ROW });
+    drawYLabel(svg, { x: 12, cy: rowY(NF / 2), lines: ["ds_load fragment"] });
 
     histFill = el("path", { class: "bw-histfill", d: "" });
     histLine = el("path", { class: "bw-histline", d: "" });
     svg.append(histFill, histLine);
 
     budgetG = el("g", { class: "bw-budget", opacity: 0 });
-    budgetG.appendChild(el("line", { x1: X0, y1: hy(D!.budget), x2: X1, y2: hy(D!.budget) }));
-    const bt = el("text", { x: X1, y: hy(D!.budget) - 5, "text-anchor": "end" });
+    budgetG.appendChild(el("line", { x1: G.x0, y1: hy(D!.budget), x2: G.x1, y2: hy(D!.budget) }));
+    const bt = el("text", { x: G.x1, y: hy(D!.budget) - 5, "text-anchor": "end" });
     bt.textContent = `budget = ${D!.budget} VGPRs`;
     budgetG.appendChild(bt);
     svg.appendChild(budgetG);
 
-    // Two lines, as the figure has it. Inside a rotated <text> a tspan's dy runs
-    // along local +y, which the -90 maps to global +x -- so the second line lands
-    // beside the first rather than under it, both still centred on the panel.
-    const hcy = (HIST_TOP + HIST_BOT) / 2;
-    const hlab = el("text", {
-      class: "bw-axis", x: 12, y: hcy,
-      "text-anchor": "middle", transform: `rotate(-90 12 ${hcy})`,
+    drawYLabel(svg, {
+      x: 12, cy: (G.histTop + G.histBot) / 2,
+      lines: ["live VGPRs", "(calculated by mutation)"],
     });
-    for (const [text, cls, dy] of [
-      ["live VGPRs", "", "0"],
-      ["(calculated by mutation)", "bw-axis-sub", "1.15em"],
-    ] as [string, string, string][]) {
-      const tsp = el("tspan", { x: 12, dy, ...(cls ? { class: cls } : {}) });
-      tsp.textContent = text;
-      hlab.appendChild(tsp);
-    }
-    svg.appendChild(hlab);
   }
 
   function render() {
@@ -213,8 +161,8 @@ if (root) {
       useR[i].classList.toggle("is-dim", !on);
     });
     const h = histogram();
-    histFill.setAttribute("d", stepPath(h, true));
-    histLine.setAttribute("d", stepPath(h, false));
+    histFill.setAttribute("d", hist(h, true));
+    histLine.setAttribute("d", hist(h, false));
   }
 
   function paintControls() {
@@ -381,8 +329,9 @@ if (root) {
     D = d;
     NF = d.frags.length;
     NW = d.nwmma;
-    ROW = (BARS_BOT - BARS_TOP) / NF;
-    BAR_H = ROW * 0.72;
+    x = xScaleFor(G, NW);
+    const rg = rowsIn(G, NF);
+    ROW = rg.row; BAR_H = rg.barH; rowY = rg.y;
     // Optional: the caption naming the kernel is not always in the markup.
     const kernel = root!.querySelector<HTMLElement>(".bw-kernel");
     if (kernel) kernel.textContent = d.kernel;

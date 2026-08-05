@@ -193,7 +193,6 @@ python third_party/amd/python/examples/gluon/f16_gemm_gfx1250.py \
   --single-warp-schedule</code></pre>
   <p>
     Launches <code>gemm_tdm_pipelined_single_warp_per_simd_schedule_kernel</code> on GFX1250.
-    This is <code>f16_bm256_bk256</code> in the CI kernel corpus.
   </p>
 </div>
 
@@ -299,10 +298,10 @@ The DAG mutation starts with every load fragment's window being as short and as 
   </div>
 </figure>
 
-<h3>The same run, with the mutation</h3>
+<h3>An example run on a real kernel, with the DAG mutation</h3>
 
 <p>
-The edge does not merely make a load <em>less preferred</em> before its floor &mdash; it makes it ineligible, so it is not in <code>Available</code> at all. That is the difference that matters. While <code>Available</code> is empty the scheduler runs <code>bumpCycle()</code> and the clock advances, which is the one thing <code>tryCandidateCoexec</code> could never reach: a function that compares two candidates has no way to empty the queue.
+With these added edges forming a window for every <code>ds_load</code> fragment, the same kernels where the CoExecScheduler was often forced to schedule <code>ds_load</code>s far too early instead has an empty available queue. Note how the <code>ds_load</code>s now have a WMMA it must follow first. That is the result of being assigned an incoming edge from an earlier WMMA. It forces said <code>ds_load</code>s from being put in the available queue early. This means that the CoExecScheduler is able to schedule nothing, as it finds itself with an empty queue rather than a queue with instructions that really shouldn't be scheduled at that moment.
 </p>
 
 <figure class="te dr" id="dr">
@@ -329,7 +328,6 @@ The edge does not merely make a load <em>less preferred</em> before its floor &m
           <div class="te-coda is-active">
             <pre><code>while (Available.empty())
     bumpCycle();</code></pre>
-            <p>live while nothing is eligible: the clock moves here</p>
           </div>
         </div>
 
@@ -356,6 +354,36 @@ The edge does not merely make a load <em>less preferred</em> before its floor &m
     <button type="button" data-act="reset">Reset</button>
     <span class="te-progress"></span>
   </div>
+
+  <figcaption></figcaption>
+</figure>
+
+<h3>What it actually bought</h3>
+
+<p>
+The chart above shows the pressure the mutation <em>calculates</em> over the <code>ds_load</code> fragments while it is deciding where they may go. This one shows what the scheduler <em>measured</em> afterwards: total VGPR pressure across the whole region, sampled once per pick. The two y scales are nothing like each other for that reason. Both runs below are real; the toggle swaps between them.
+</p>
+
+<figure class="lr" id="lr">
+  <div class="lr-controls">
+    <div class="lr-kernels" role="group" aria-label="Kernel">
+      <button type="button" data-kernel="mxfp" aria-pressed="true">mxfp GEMM</button>
+      <button type="button" data-kernel="f16" aria-pressed="false">f16 GEMM</button>
+    </div>
+    <div class="lr-dag" role="group" aria-label="DAG mutation">
+      <button type="button" data-dag="off" aria-pressed="true">mutation off</button>
+      <button type="button" data-dag="on" aria-pressed="false">mutation on</button>
+    </div>
+  </div>
+
+  <svg class="lr-svg" viewBox="0 0 680 362" role="img"
+       aria-label="One bar per ds_load fragment showing how long it is held live against the WMMA timeline, above the VGPR pressure the scheduler measured over the same region, with and without the DAG mutation"></svg>
+
+  <ul class="lr-legend">
+    <li><span class="lr-key lr-kheld"></span>held live but not yet read</li>
+    <li><span class="lr-key lr-kinuse"></span>in use (first to last consumer)</li>
+    <li><span class="lr-key lr-kclamp"></span>in use, constrained by the mutation</li>
+  </ul>
 
   <figcaption></figcaption>
 </figure>

@@ -689,10 +689,11 @@
 .bw-budget line { stroke: var(--error); stroke-width: 1.5; stroke-dasharray: 6 4; }
 .bw-budget text { font-family: monospace; font-size: 11px; fill: var(--error); }
 
-.bw-grid { stroke: var(--outline); stroke-width: 1; opacity: 0.5; }
-.bw-tick { font-family: monospace; font-size: 10px; fill: var(--on_surface_variant); }
-.bw-axis { font-size: 10.5px; fill: var(--on_surface_variant); }
-.bw-axis-sub { font-size: 8.5px; }
+/* Shared by both two-panel charts -- see chart.ts. */
+.ch-grid { stroke: var(--outline); stroke-width: 1; opacity: 0.5; }
+.ch-tick { font-family: monospace; font-size: 10px; fill: var(--on_surface_variant); }
+.ch-axis { font-size: 10.5px; fill: var(--on_surface_variant); }
+.ch-axis-sub { font-size: 8.5px; }
 
 /* Transparent, and wider than the bar so a fragment can be picked anywhere
  * along its row rather than only where it happens to be drawn. */
@@ -821,3 +822,62 @@
   background: var(--on_surface_variant);
   opacity: 0.3;
 }
+
+
+/* --- live ranges vs WMMAs scheduled in order ----------------------------- */
+/* Same frame as the budget chart (chart.ts draws both) and the same palette as
+ * the lifelines figure it continues. The inactive mutation state stays on
+ * screen as a ghost, so the comparison is always visible rather than something
+ * you have to hold in your head across a click. */
+
+.lr {
+  margin: 1.5rem 0;
+  padding: 0.9rem;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface_variant);
+}
+
+.lr-svg { width: 100%; height: auto; display: block; }
+
+.lr-controls { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin: 0 0 0.7rem; }
+.lr-kernels, .lr-dag { display: flex; gap: 0.4rem; }
+.lr-controls button {
+  font: inherit;
+  font-size: 0.82em;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: none;
+  color: var(--on_surface);
+  cursor: pointer;
+}
+.lr-controls button[aria-pressed="true"] { border-color: var(--primary); background: var(--surface); }
+
+.lr-held { fill: var(--error); }
+.lr-use { fill: var(--secondary); }
+.lr-use.is-clamped { fill: var(--primary); }
+
+/* Both curves are drawn; only one is active. */
+.lr-curve { fill: none; stroke: var(--on_surface_variant); stroke-width: 1.1; opacity: 0.28; }
+.lr-fill { fill: var(--on_surface_variant); opacity: 0.07; }
+.lr-curve.is-active { stroke-width: 1.6; opacity: 1; }
+.lr-fill.is-active { opacity: 0.2; }
+
+.lr-legend {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+  gap: 0.1rem 0.6rem;
+  font-size: 0.8em;
+  color: var(--on_surface_variant);
+}
+.lr-legend li { display: flex; align-items: center; gap: 0.45rem; }
+.lr-key { flex: 0 0 auto; width: 1.1rem; height: 0.55rem; border-radius: 2px; }
+.lr-kheld { background: var(--error); }
+.lr-kinuse { background: var(--secondary); }
+.lr-kclamp { background: var(--primary); }
+
+.lr figcaption { margin-top: 0.7rem; font-size: 0.85em; color: var(--on_surface_variant); }
