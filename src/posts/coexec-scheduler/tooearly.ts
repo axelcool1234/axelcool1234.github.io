@@ -33,8 +33,6 @@ if (root) {
   const none = q<HTMLElement>(".te-none");
   const nowLine = q<HTMLElement>(".te-now");
   const counter = q<HTMLElement>(".te-count-value");
-  const caption = q<HTMLElement>(".te-caption");
-  const coda = q<HTMLElement>(".te-coda");
   const progress = q<HTMLElement>(".te-progress");
   const playBtn = q<HTMLButtonElement>('[data-act="play"]');
   const stepBtn = q<HTMLButtonElement>('[data-act="step"]');
@@ -138,17 +136,6 @@ if (root) {
 
     step++;
     paintControls();
-
-    if (step === FR.length) {
-      const offs = FR.map((x) => x.issue_off);
-      const cmins = FR.map((x) => x.cmin);
-      caption.textContent =
-        `issued at W[${Math.min(...offs)}–${Math.max(...offs)}]` +
-        `  ·  first read at W[${Math.min(...cmins)}–${Math.max(...cmins)}]`;
-      await fadeIn(caption, 260);
-      if (token !== mine) return;
-      await fadeIn(coda, 320);
-    }
   }
 
   function reset() {
@@ -167,9 +154,6 @@ if (root) {
     counter.textContent = "0";
     verdict.textContent = "";
     verdict.style.opacity = "1";
-    caption.textContent = "";
-    caption.style.opacity = "1";
-    coda.hidden = true;
     none.style.visibility = "";
     none.style.opacity = "1";
     paintControls();
@@ -212,6 +196,6 @@ if (root) {
       reset();
     })
     .catch(() => {
-      caption.textContent = "could not load sched-data.json";
+      q<HTMLElement>(".te-sub").textContent = "could not load sched-data.json";
     });
 }

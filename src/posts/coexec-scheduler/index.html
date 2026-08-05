@@ -167,43 +167,65 @@ This scheduler is greedy, like other schedulers. Whenever an instruction is avai
 <h3>An example on a real kernel</h3>
 
 <p>
-The seven <code>ds_load</code> fragments below come from <code>mxfp_gemm_canonical</code>, and every number in this figure is read out of a <code>-debug-only=machine-scheduler</code> run &mdash; these are the positions the scheduler actually chose, not an illustration. Watch where each load is issued, and where it is first read.
+The seven <code>ds_load</code> fragments below come from the
+<button type="button" class="info-link" popovertarget="mxfp-cmd">mxfp GEMM</button>, and every
+number in this figure is read out of a <code>-debug-only=machine-scheduler</code> run, so these are
+the positions the scheduler actually chose rather than an illustration. Watch where each load is
+issued, and where it is first read.
 </p>
 
+<div class="info-pop" id="mxfp-cmd" popover>
+  <h4>mxfp GEMM &mdash; <code>mxfp_gemm_canonical_32t</code></h4>
+  <pre><code>TRITON_HIP_USE_COEXEC_SCHEDULER=1 \
+python third_party/amd/python/examples/gluon/mxfp_gemm_gfx1250.py \
+  -M 1024 -N 2048 -K 4096 \
+  -BM 256 -BN 256 -BK 256 \
+  --num_warps 4 --num_buffers 2 \
+  --dtype_a float8_e4m3 --dtype_b float8_e4m3 \
+  --scale_preshuffled --schedule sliceNK</code></pre>
+  <p>
+    Launches <code>mxgemm_tdm_pipelined_kernel</code> on gfx1250. Only <code>-M/-N/-K</code> set the
+    problem size; the tile sizes, dtypes and schedule are what shape the generated code, so the
+    other <code>mxfp_gemm_canonical</code> variants in the corpus compile to exactly this kernel and
+    produce the same schedule.
+  </p>
+</div>
+
 <figure class="te" id="te">
-  <p class="te-sub">CoExecScheduler, no mutation &mdash; scheduling 7 <code>ds_load</code> fragments on <code>mxfp_gemm_canonical</code></p>
+  <p class="te-sub">CoExecScheduler, no mutation &mdash; scheduling 7 <code>ds_load</code> fragments in the mxfp GEMM</p>
 
   <div class="te-stage">
     <div class="te-queue">
       <h4>Available queue</h4>
       <ol class="te-blocks"></ol>
-      <p class="te-none">0 WMMAs available &mdash; they are all waiting on these loads</p>
+      <p class="te-none">0 WMMAs available - they are all waiting on these loads</p>
     </div>
 
-    <div class="te-mid">
-      <h4>tryCandidateCoexec</h4>
-      <div class="te-comp"></div>
-      <p class="te-verdict"></p>
-    </div>
-
-    <div class="te-count">
-      <span class="te-count-label">VGPRs held unread</span>
-      <span class="te-count-value">0</span>
-    </div>
-  </div>
-
-  <div class="te-timeline">
-    <div class="te-rows"></div>
-    <div class="te-now" data-label="now: W[0]"></div>
-    <div class="te-axis"><span>W[0]</span><span>W[32]</span><span>W[64]</span><span>W[96]</span><span>W[127]</span></div>
-  </div>
-
-  <p class="te-caption"></p>
-
-  <div class="te-coda" hidden>
-    <pre><code>while (Available.empty())
+    <div class="te-right">
+      <div class="te-toprow">
+        <div class="te-mid">
+          <h4>tryCandidateCoexec</h4>
+          <div class="te-comp"></div>
+          <p class="te-verdict"></p>
+          <div class="te-coda">
+            <pre><code>while (Available.empty())
     bumpCycle();</code></pre>
-    <p>It <em>can</em> issue nothing &mdash; but only once the queue is empty.</p>
+            <p>the scheduler can issue nothing, but only if the queue is empty</p>
+          </div>
+        </div>
+
+        <div class="te-count">
+          <span class="te-count-label">VGPRs held unread</span>
+          <span class="te-count-value">0</span>
+        </div>
+      </div>
+
+      <div class="te-timeline">
+        <div class="te-rows"></div>
+        <div class="te-now" data-label="now: W[0]"></div>
+        <div class="te-axis"><span>W[0]</span><span>W[32]</span><span>W[64]</span><span>W[96]</span><span>W[127]</span></div>
+      </div>
+    </div>
   </div>
 
   <div class="te-controls">
@@ -214,7 +236,7 @@ The seven <code>ds_load</code> fragments below come from <code>mxfp_gemm_canonic
   </div>
 
   <figcaption>
-    Without the mutation all seven fragments issue at <strong>W[33&ndash;43]</strong> but are not read until <strong>W[88&ndash;101]</strong> &mdash; 98 VGPRs held across roughly 55 WMMAs.
+    Without the mutation all seven fragments are scheduled at <strong>W[33-43]</strong> but are not read until <strong>W[88-101]</strong>.
   </figcaption>
 </figure>
 
