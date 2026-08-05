@@ -1,0 +1,204 @@
+<h1>Scheduling <code>ds_load</code> on GFX1250 with a DAG mutation</h1>
+
+<p class="post-meta">
+  Target: AMD GFX1250 / MI450, CoExecScheduler (pre-RA) &middot; status: PRs open &middot;
+  <a href="https://github.com/llvm/llvm-project/pull/203095">public PR</a> &middot;
+  <a href="https://github.com/axelcool1234/AMD-DAG-Mutation-Artifact">artifact</a>
+</p>
+
+<h2>TL;DR</h2>
+
+<p>
+  The pre-RA scheduler, run on MI450, tends to bunch many <code>ds_load</code>s (LDS load
+  instructions) at the head of a GEMM inner loop. Looking into the CoExecScheduler, it turned out
+  that because the scheduler greedily schedules an instruction whenever one is available, there are
+  moments where the <em>only</em> instructions available — and therefore the ones scheduled — are
+  <code>ds_load</code>s for data consumed much, much later.
+</p>
+
+<p>That does two bad things at once:</p>
+
+<ul>
+  <li>it forces the WMMAs to sit behind long <code>s_wait_dscnt</code> stalls;</li>
+  <li>it inflates register pressure, because the live ranges are needlessly long.</li>
+</ul>
+
+<p>
+  The DAG mutation in <code>AMDGPUWMMASchedule.cpp</code> adds hard constraints on where these loads
+  may sit relative to the WMMAs that consume them. That spreads the loads out and stops the
+  scheduler from greedily issuing them far too early. The mutation is also (statically, and rather
+  naively) aware of register pressure, so those constraints form a <em>window</em> in which each
+  load can be scheduled without causing excessive spills.
+</p>
+
+<h2>Why do we want the DAG mutation?</h2>
+
+<p>
+  To understand why the mutation is necessary we should first look at the pre-RA scheduler — its
+  strengths, and more importantly its weaknesses.
+</p>
+
+<h3>The CoExecScheduler</h3>
+
+<p>
+  The mutation is largely independent of any particular scheduler, but there is an intention to
+  move the AMDGPU backend to the CoExecScheduler in future, so everything below is measured against
+  it. CoExec is a pre-RA machine scheduler strategy for GFX1250; it replaces the generic
+  bottom-up/top-down instruction scheduler run before register allocation. It is selected when
+  <code>amdgpu-sched-strategy == "coexec"</code>, is gated to gfx1250 only, and is assembled in
+  <code>AMDGPUCoExecSchedStrategy.cpp</code> as a <code>GCNScheduleDAGMILive</code> driven by
+  <code>AMDGPUCoExecSchedStrategy</code> plus two DAG mutations (three, counting ours).
+</p>
+
+<h3>Co-execution windows</h3>
+
+<p>
+  The whole point of CoExec is that multi-cycle instructions (WMMAs, TRANS, multi-cycle VALU) can
+  be scheduled alongside other instructions that run in parallel. Each multi-cycle op exposes a
+  window of slots, and each slot has rules about which instruction types may legally co-execute
+  there (a correctness constraint, which cannot be violated) and which are preferred there (a
+  performance one, which can).
+</p>
+
+<h3>How each ready instruction is chosen</h3>
+
+<p>
+  Everything goes through <code>AMDGPUCoExecSchedStrategy::tryCandidateCoexec</code>. Given two
+  candidates it applies tie-breakers in a fixed priority order, and it is a <em>cascade</em>: it
+  returns at the first rung that discriminates, so the rungs below never run.
+</p>
+
+<p>
+  The widget below mirrors <code>pickNodeFromQueue</code>. One pass is made over the whole queue;
+  each instruction in turn becomes the <em>candidate</em> and is compared against the reigning
+  <em>winner</em>, and the loser is discarded. Nothing is issued mid-scan — only when the pass ends
+  does <code>pickNode</code> schedule whichever winner survived.
+  <strong>Click any heuristic to read what it does.</strong>
+</p>
+
+<figure class="rq" id="rq">
+  <div class="rq-stage">
+    <div class="rq-queue">
+      <h4>Available queue</h4>
+      <ol class="rq-blocks">
+        <li class="rq-block" data-kind="ds">ds_load</li>
+        <li class="rq-block" data-kind="ds">ds_load</li>
+        <li class="rq-block" data-kind="ds">ds_load</li>
+        <li class="rq-block" data-kind="ds">ds_load</li>
+        <li class="rq-block" data-kind="ds">ds_load</li>
+        <li class="rq-block" data-kind="wmma">WMMA</li>
+      </ol>
+      <p class="rq-exhausted" hidden>queue exhausted</p>
+    </div>
+
+    <div class="rq-arena">
+      <div class="rq-slots">
+        <div class="rq-slot" data-slot="winner"><span class="rq-slot-label">winner</span></div>
+        <div class="rq-slot" data-slot="candidate"><span class="rq-slot-label">candidate</span></div>
+        <div class="rq-slot rq-bin" data-slot="bin"><span class="rq-slot-label">discarded</span></div>
+      </div>
+
+      <div class="rq-comp">
+        <h4>tryCandidateCoexec</h4>
+        <ol class="rq-ladder">
+          <li><button type="button">biasPhysReg</button>
+            <div class="rq-doc">Fires on physreg copies and move-immediates. It plays no meaningful
+              role in <code>ds_load</code> bunching — those are rare in WMMA GEMM inner loops.
+              <strong>Why it is top priority:</strong> physical registers are special. Unlike
+              virtual registers the allocator cannot split or spill them, so a physreg's live range
+              should be kept as short as possible.</div></li>
+
+          <li><button type="button">tryPressure (RegExcess)</button>
+            <div class="rq-doc">“Excess” concerns whether an instruction raises register pressure
+              <em>beyond the limit</em>; moving pressure around below the limit is neutral. If one
+              candidate decreases pressure and the other does not, take the one that decreases. If
+              both increase the same set, prefer the smaller increase. If they increase different
+              sets, rank by how critical each set is and prefer the less critical one.
+              <strong>Why it is #2:</strong> spilling, or dropping occupancy, is one of the most
+              expensive things a schedule can do.</div></li>
+
+          <li><button type="button">tryEffectiveStall</button>
+            <div class="rq-doc">Computes, per candidate, the stall cycles it would incur if issued
+              at the current cycle plus the co-execution slots it would waste, and prefers the
+              lower. <strong>This is a large part of why the bunching happens.</strong> A
+              <code>ds_load</code> whose address is ready costs ~0 stall. A WMMA consuming a
+              recently-issued load must wait the full load latency before its operands land, costing
+              a large stall. So the scheduler keeps taking the cheap loads and deferring the
+              expensive WMMAs, cycle after cycle. It is meant to hide latency — but nothing
+              counterbalances the register pressure that front-loading creates: RegExcess above is
+              blind to the cumulative pile-up, and RegMax below is too low to override it.</div></li>
+
+          <li><button type="button">tryMemoryPipeline</button>
+            <div class="rq-doc">Prefers DMA (async global→LDS tensor copies) or fence ops that can
+              issue with zero stall, to keep the memory pipeline moving. Not relevant to
+              <code>ds_load</code> bunching.</div></li>
+
+          <li><button type="button">tryCoexecSlot</button>
+            <div class="rq-doc">Only fires when a multi-cycle op is in flight, exposing a
+              co-execution window. By this point <code>tryEffectiveStall</code> has already run, so
+              both candidates have equal stall cycles and would land in the same slot; the decision
+              is purely which instruction fits that slot better. It prefers candidates whose type is
+              not <em>avoided</em> at the slot, and among those, whose type is
+              <em>preferred</em>.</div></li>
+
+          <li><button type="button">tryShadowMix</button>
+            <div class="rq-doc">Looks at what the current shadow needs. If unsatisfied, prefer
+              instructions the window still needs; if satisfied, prefer ops that open a new
+              co-execution window (like WMMAs).</div></li>
+
+          <li><button type="button">tryCriticalResource / Dep / Prio</button>
+            <div class="rq-doc">Tries to keep hardware units busy, ranked by how important each unit
+              is.</div></li>
+
+          <li><button type="button">Clustering / getWeakLeft</button>
+            <div class="rq-doc">Keeps clustered memory operations together.</div></li>
+
+          <li><button type="button">tryPressure (RegMax)</button>
+            <div class="rq-doc">Concerned with preventing <em>peak</em> register pressure from
+              rising. Note how low priority this is — by the time the cascade could reach it, the
+              stall heuristic has almost always already decided.</div></li>
+
+          <li><button type="button">tryLatency</button>
+            <div class="rq-doc">Prefers candidates with high DAG height, i.e. long chains of
+              latency. Much like <code>tryEffectiveStall</code>, this leads to
+              <code>ds_load</code>s being heavily preferred.</div></li>
+
+          <li><button type="button">NodeOrder</button>
+            <div class="rq-doc">Prefer original program order.</div></li>
+        </ol>
+      </div>
+
+      <p class="rq-caption" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div class="rq-controls">
+    <button type="button" data-act="play">Play</button>
+    <button type="button" data-act="step">Step</button>
+    <button type="button" data-act="reset">Reset</button>
+    <span class="rq-progress"></span>
+  </div>
+
+  <figcaption>
+    A pass over the ready queue. Which rung lights up is drawn from the real reason histogram:
+    <code>Stall</code> and <code>CritResourceDep</code> dominate, <code>CritResource</code> is third,
+    and <code>CoexecSlot</code> fires occasionally.
+  </figcaption>
+</figure>
+
+<h3>The issue with this scheduler</h3>
+
+<p>
+  This scheduler is greedy, like other schedulers. Whenever an instruction is available to be
+  scheduled, an instruction <em>will</em> be scheduled. The problem is that there are moments when
+  the only available instructions are <code>ds_load</code>s that will not be consumed for a long
+  time. No amount of tie-breaking can prevent that, because
+  <strong>CoExec has no way to reject every available instruction and schedule nothing instead</strong>.
+  So the loads go out far too early, simply because the scheduler ran out of anything else that
+  could win.
+</p>
+
+<p>
+  That is the gap the DAG mutation fills — not by adding another heuristic, but by removing those
+  loads from the queue until the point where issuing them is actually reasonable.
+</p>

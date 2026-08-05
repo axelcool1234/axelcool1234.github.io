@@ -1,0 +1,254 @@
+/* The ready-queue widget.
+ *
+ * Every colour is a theme variable, which is the whole reason this is DOM and
+ * not the recorded animation from the talk: it follows the theme picker. Blocks
+ * are laid out by normal flow and moved with FLIP, so nothing here depends on
+ * absolute coordinates. */
+
+.post-meta {
+  font-size: 0.9em;
+  color: var(--on_surface_variant);
+}
+
+.rq {
+  margin: 1.5rem 0;
+  padding: 0.9rem;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface_variant);
+}
+
+.rq-stage {
+  display: flex;
+  gap: 1.2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.rq h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--on_surface_variant);
+}
+
+/* ---- the queue ---------------------------------------------------------- */
+
+.rq-queue {
+  flex: 0 0 auto;
+  min-width: 9.5rem;
+}
+
+.rq-blocks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 2rem;
+}
+
+.rq-block {
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.85em;
+  text-align: center;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+/* ds_load and WMMA must stay tellable apart in all 66 themes, so they take two
+ * different theme roles rather than two shades of one. */
+.rq-block[data-kind="ds"] {
+  background: var(--secondary);
+  color: var(--on_secondary);
+}
+
+.rq-block[data-kind="wmma"] {
+  background: var(--primary);
+  color: var(--on_primary);
+}
+
+.rq-block.is-flash {
+  outline: 2px solid var(--tertiary);
+  outline-offset: 2px;
+}
+
+.rq-block.is-gone {
+  opacity: 0;
+  transition: opacity 200ms linear;
+}
+
+.rq-block.is-issued {
+  outline: 2px solid var(--tertiary);
+  outline-offset: 3px;
+}
+
+.rq-exhausted {
+  margin: 0.5rem 0 0;
+  font-size: 0.8em;
+  color: var(--on_surface_variant);
+}
+
+/* ---- slots and bin ------------------------------------------------------ */
+
+.rq-arena {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.rq-slots {
+  display: flex;
+  gap: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.rq-slot {
+  flex: 1 1 0;
+  min-height: 3.1rem;
+  padding: 0.3rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.rq-bin {
+  border-style: dashed;
+}
+
+.rq-slot-label {
+  font-size: 0.72em;
+  color: var(--on_surface_variant);
+}
+
+/* ---- the cascade -------------------------------------------------------- */
+
+.rq-ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: rung;
+}
+
+.rq-ladder li {
+  counter-increment: rung;
+  border-radius: 4px;
+}
+
+.rq-ladder button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-family: monospace;
+  font-size: 0.82em;
+  padding: 0.16rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--on_surface_variant);
+  cursor: pointer;
+}
+
+.rq-ladder button::before {
+  content: counter(rung) ". ";
+  opacity: 0.6;
+}
+
+.rq-ladder button:hover {
+  color: var(--on_surface);
+  border-color: var(--outline);
+}
+
+/* the cascade walking down, and the rung that returns */
+.rq-ladder li.is-scanning button {
+  color: var(--on_surface);
+  border-color: var(--outline);
+}
+
+.rq-ladder li.is-decided button {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.rq-ladder li.is-open button {
+  color: var(--on_surface);
+  border-color: var(--primary);
+}
+
+/* With JS off every explanation is simply visible; the script collapses them. */
+.rq-ladder li.is-collapsible .rq-doc {
+  display: none;
+}
+
+.rq-ladder li.is-open .rq-doc {
+  display: block;
+}
+
+.rq-doc {
+  margin: 0.3rem 0 0.5rem;
+  padding: 0.5rem 0.7rem;
+  border-left: 2px solid var(--primary);
+  background: var(--surface);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.88em;
+}
+
+/* ---- caption and controls ---------------------------------------------- */
+
+.rq-caption {
+  min-height: 1.4em;
+  margin: 0.7rem 0 0;
+  font-size: 0.9em;
+  color: var(--on_surface_variant);
+}
+
+.rq-caption.is-hot { color: var(--error); }
+.rq-caption.is-ok { color: var(--tertiary); }
+
+.rq-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--outline);
+}
+
+.rq-controls button {
+  font: inherit;
+  padding: 0.25rem 0.8rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--on_surface);
+  cursor: pointer;
+}
+
+.rq-controls button:hover {
+  background: var(--hover);
+  color: var(--on_hover);
+}
+
+.rq-progress {
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  color: var(--on_surface_variant);
+}
+
+.rq figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.85em;
+  color: var(--on_surface_variant);
+}
+
+@media (max-width: 32rem) {
+  .rq-stage { flex-direction: column; }
+  .rq-queue { width: 100%; }
+  .rq-blocks { flex-direction: row; flex-wrap: wrap; }
+}
