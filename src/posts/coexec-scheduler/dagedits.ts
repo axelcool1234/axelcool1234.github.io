@@ -16,6 +16,10 @@ export {};   // makes this a module: otherwise its interfaces are global
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+// cube-engine.ts's arrowLength / arrowSpread.
+const HEAD_LEN = 14;
+const HEAD_SPREAD = Math.PI / 7;
+
 interface DagNode {
   id: string;
   label: string;
@@ -82,9 +86,10 @@ const NODES: DagNode[] = [
   { id: "W3", label: "WMMA W3", kind: "wmma", homeX: 380, homeY: 232 },
   { id: "L1", label: "ds_load L1", kind: "ds", homeX: 130, homeY: 129 },
   { id: "L2", label: "ds_load L2", kind: "ds", homeX: 130, homeY: 191 },
-].map((n) => ({
+].map((n, i) => ({
   ...n, x: n.homeX, y: n.homeY, vx: 0, vy: 0,
-  phase: Math.PI * 2 * (n.homeY / 97), w: n.kind === "wmma" ? 104 : 108, h: 28,
+  phase: i * 0.8,   // cube's jitterPhaseStep
+  w: n.kind === "wmma" ? 104 : 108, h: 28,
 })) as DagNode[];
 
 const EDGES: DagEdge[] = [
@@ -118,8 +123,10 @@ if (root) {
   // centre-to-centre vector until it touches the nearer edge of the rectangle.
   function anchor(a: DagNode, b: DagNode) {
     const dx = b.x - a.x, dy = b.y - a.y;
-    const sx = dx === 0 ? Infinity : (a.w / 2 + 3) / Math.abs(dx);
-    const sy = dy === 0 ? Infinity : (a.h / 2 + 3) / Math.abs(dy);
+    // No padding: the tip lands exactly on the border of the box it points at,
+    // rather than stopping a few units short and leaving the arrow floating.
+    const sx = dx === 0 ? Infinity : (a.w / 2) / Math.abs(dx);
+    const sy = dy === 0 ? Infinity : (a.h / 2) / Math.abs(dy);
     const s = Math.min(sx, sy);
     return { x: a.x + dx * s, y: a.y + dy * s };
   }
@@ -135,16 +142,21 @@ if (root) {
         class: `de-edge de-e${e.edit}${on ? "" : " is-dim"}${selected === e.edit ? " is-on" : ""}`,
       });
       g.appendChild(el("line", { x1: p.x, y1: p.y, x2: q.x, y2: q.y }));
-      // arrowhead
+      // The head is two short lines drawn back from the tip, which is how
+      // cube-engine.ts's drawArrow builds one -- not a filled polygon. A
+      // polygon converging to a point cannot cover the 2.5px line arriving at
+      // that same point, so the line's edges poked out past the sides of the
+      // head; three strokes of one width meeting at a round cap cannot. It
+      // also means the head thickens with the line when an edge is selected,
+      // instead of staying a fixed size.
       const ang = Math.atan2(q.y - p.y, q.x - p.x);
-      const L = 13, S = Math.PI / 7;
-      g.appendChild(el("polygon", {
-        points: [
-          `${q.x},${q.y}`,
-          `${q.x - Math.cos(ang - S) * L},${q.y - Math.sin(ang - S) * L}`,
-          `${q.x - Math.cos(ang + S) * L},${q.y - Math.sin(ang + S) * L}`,
-        ].join(" "),
-      }));
+      for (const s of [-HEAD_SPREAD, HEAD_SPREAD]) {
+        g.appendChild(el("line", {
+          x1: q.x, y1: q.y,
+          x2: q.x - Math.cos(ang + s) * HEAD_LEN,
+          y2: q.y - Math.sin(ang + s) * HEAD_LEN,
+        }));
+      }
       // invisible fat line so the edge is easy to hit
       const hit = el("line", {
         x1: p.x, y1: p.y, x2: q.x, y2: q.y,
@@ -154,6 +166,7 @@ if (root) {
         class: "de-hit",
       });
       hit.addEventListener("pointerdown", (ev) => {
+        ev.stopPropagation();
         ev.preventDefault();
         select(selected === e.edit ? -1 : e.edit);
       });
@@ -197,7 +210,6 @@ if (root) {
   // any short glance looked like nothing was moving at all.
   const M = { xAmp: 3, yAmp: 5, xSpeed: 0.0015, ySpeed: 0.002,
               jAmp: 1.8, jSpeed: 0.0025, spring: 0.01, damping: 0.9 };
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function frame(t: number) {
     const bobX = Math.sin(t * M.xSpeed) * M.xAmp;
@@ -215,5 +227,9 @@ if (root) {
   }
 
   select(-1);
-  if (!still) requestAnimationFrame(frame);
+  // Unconditionally, as the lambda cube does. Gating this on
+  // prefers-reduced-motion meant the diagram floated on a phone and sat frozen
+  // on any machine with the OS setting on, which is not a difference anyone
+  // would attribute to their accessibility preferences.
+  requestAnimationFrame(frame);
 }
