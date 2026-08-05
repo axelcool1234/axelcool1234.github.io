@@ -77,7 +77,10 @@ if (root) {
   };
 
   const x = (w: number) => X0 + (w / (NW - 1)) * (X1 - X0);
-  const rowY = (r: number) => BARS_TOP + r * ROW;
+  // Row 0 at the BOTTOM, as the figure has it -- matplotlib's barh(r) counts up
+  // from the x axis. The fragments are in issue order, so the earliest end up
+  // nearest the histogram panel they feed.
+  const rowY = (r: number) => BARS_TOP + (NF - 1 - r) * ROW;
   // Same headroom as the figure: 30% above the budget, so the line sits high in
   // the panel and the curve has somewhere to go if it ever did rise.
   const hy = (v: number) => HIST_BOT - (v / (D!.budget * 1.3)) * (HIST_BOT - HIST_TOP);
@@ -235,7 +238,7 @@ if (root) {
     const i = step - 1;
     const f = D!.frags[i];
     const from = lefts[i], to = f.earliest;
-    await play((a) => { lefts[i] = from + (to - from) * a; render(); }, 300, smooth);
+    await play((a) => { lefts[i] = from + (to - from) * a; render(); }, 200, smooth);
     if (token !== mine) return;
     lefts[i] = to;
     render();
@@ -251,18 +254,23 @@ if (root) {
       info.innerHTML = `<p class="bw-hint">Click any fragment to see where its window came from.</p>`;
     } else {
       const f = D!.frags[i];
-      const where = f.clamped
-        ? `Pulling it earlier stops at <strong>W[${f.earliest}]</strong>. One step further, at W[${f.blocked_at}],
-           the running total had already reached ${f.blocked_hist} VGPRs &mdash; the budget &mdash; so moving it
-           there would have raised the peak. <strong>W[${f.earliest}] is the number that goes into its
-           <code>earlier WMMA &rarr; ds_load</code> edge.</strong>`
-        : `Nothing blocked it: every point back to the top of the loop body had room under the budget, so it
-           can be issued as early as <strong>W[${f.earliest}]</strong> and gains no edge.`;
+      // Three points, in the order the pass establishes them: the window ALAP
+      // gives it, what that window costs, and where the budget let it move to.
+      const pulled = f.clamped
+        ? `<strong>W[${f.earliest}]</strong> and no further: one step earlier, at W[${f.blocked_at}], the
+           running total was already at the ${f.blocked_hist}-VGPR budget, so it stops here. This is the
+           number in its <code>earlier WMMA &rarr; ds_load</code> edge.`
+        : `<strong>W[${f.earliest}]</strong>, the top of the loop body &mdash; every point on the way back had
+           room under the budget, so it gains no edge.`;
       info.innerHTML =
-        `<h4>fragment ${i} - ${f.vgprs} VGPRs${f.clamped ? "" : ", never clamped"}</h4>
-         <p>As late as possible it issues at W[${f.alap}], right before its first consumer at W[${f.cmin}],
-            which holds ${f.vgprs} VGPRs for ${f.cmin - f.alap} WMMAs and leaves no room to hide the LDS
-            latency. ${where}</p>`;
+        `<h4>fragment ${i}${f.clamped ? "" : " - never clamped"}</h4>
+         <ul>
+           <li><strong>As late as possible</strong>: issued at W[${f.alap}], first read at W[${f.cmin}]
+               &mdash; too short a window to hide the LDS latency.</li>
+           <li><strong>Costs</strong> ${f.vgprs} VGPRs across those ${f.cmin - f.alap} WMMAs, live on through
+               its consumers to W[${f.maxpos}].</li>
+           <li><strong>Pulled back to</strong> ${pulled}</li>
+         </ul>`;
     }
     render();
   }
@@ -323,7 +331,7 @@ if (root) {
       await advance();
       running = false;
       if (stopping || token !== mine) break;
-      await wait(step === 1 ? 420 : 90);
+      await wait(step === 1 ? 260 : 35);
     }
     playing = false; stopping = false; running = false;
     paintControls();
