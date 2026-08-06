@@ -64,6 +64,9 @@ if (root) {
   let heldR: SVGElement[] = [], useR: SVGElement[] = [], ghostR: SVGElement[] = [];
   let rowHit: SVGElement[] = [];
   let picked = -1;
+  // "ranges" is the live-range/pressure pair; "stalls" is the LDS wait figure
+  // over the same WMMA axis. Same data file, same assembly viewer underneath.
+  let view: "ranges" | "stalls" = "ranges";
   let curveOff: SVGElement, curveOn: SVGElement, fillOff: SVGElement, fillOn: SVGElement;
 
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -71,6 +74,7 @@ if (root) {
   function build() {
     svg.replaceChildren();
     drawXAxis(svg, G, { x, ticks: TICKS, title: "WMMAs issued" });
+    if (view === "stalls") { buildStalls(); return; }
     drawYTicks(svg, G, { values: niceTicks(yMax), y: py });
 
     // The two pressure curves are both always present: the inactive one stays
@@ -120,10 +124,65 @@ if (root) {
     });
   }
 
+  // The wait figure: one bar per s_wait_dscnt at the WMMA it sits after, as tall
+  // as the number of DS ops it actually stalls on. Every DS op must be waited
+  // for exactly once, so the totals are equal by construction -- what the
+  // mutation changes is whether that total arrives as a few huge stalls or many
+  // small ones, which is the only thing this chart is trying to show.
+  function buildStalls() {
+    const all = [...D!.asm.off.waits, ...D!.asm.on.waits];
+    const top = Math.max(1, ...all.map((w) => w.stalled)) * 1.12;
+    const sy = (v: number) => G.histBot - (v / top) * (G.histBot - G.barsTop);
+    drawYTicks(svg, { ...G, histTop: G.barsTop }, { values: niceTicks(top), y: sy });
+
+    const bw = Math.max(2.2, (G.x1 - G.x0) / 128 * 0.8);
+    for (const [side, key] of [[D!.asm.off, "off"], [D!.asm.on, "on"]] as [AsmSide, string][]) {
+      for (const w of side.waits) {
+        const r = svgEl("rect", {
+          class: `lr-stall lr-${key}`, x: x(w.wmma) - bw / 2, y: sy(w.stalled),
+          width: bw, height: Math.max(0, G.histBot - sy(w.stalled)),
+        });
+        // A wait that stalls on nothing is a zero-height bar: invisible, and
+        // impossible to click. Rather than fake a minimum height -- which would
+        // read as a small stall when it is none -- every wait gets a
+        // transparent full-height target, so all of them are reachable and the
+        // bars stay honest.
+        const hit = svgEl("rect", {
+          class: `lr-stallhit lr-${key}`, x: x(w.wmma) - Math.max(bw, 5) / 2,
+          y: G.barsTop, width: Math.max(bw, 5), height: G.histBot - G.barsTop,
+        });
+        hit.addEventListener("pointerdown", (ev) => {
+          ev.stopPropagation();
+          ev.preventDefault();
+          pickWait(w.line, w.stalled, w.wmma);
+        });
+        svg.append(r, hit);
+      }
+    }
+    drawYLabel(svg, {
+      x: 12, cy: (G.barsTop + G.histBot) / 2,
+      lines: ["DS ops waited on", "(per s_wait_dscnt)"],
+    });
+  }
+
   const pressPath = (s: Side, close: boolean) =>
     seriesPath(s.pressure.x, s.pressure.y, { x, y: py, baseY: close ? G.histBot : undefined });
 
   function render() {
+    if (view === "stalls") {
+      // Same convention as the curves: at mutation-off nothing is ghosted,
+      // because there is no earlier state to compare against yet.
+      svg.querySelectorAll<SVGElement>(".lr-stall.lr-off")
+        .forEach((e) => e.setAttribute("opacity", String(lerp(1, 0.28, alpha))));
+      svg.querySelectorAll<SVGElement>(".lr-stall.lr-on")
+        .forEach((e) => e.setAttribute("opacity", String(alpha)));
+      // Only the visible side is clickable, so a hidden bar cannot be picked.
+      svg.querySelectorAll<SVGElement>(".lr-stallhit.lr-off")
+        .forEach((e) => e.style.pointerEvents = alpha > 0.5 ? "none" : "auto");
+      svg.querySelectorAll<SVGElement>(".lr-stallhit.lr-on")
+        .forEach((e) => e.style.pointerEvents = alpha > 0.5 ? "auto" : "none");
+      return;
+    }
     D!.off.bars.forEach((o, i) => {
       const n = D!.on.bars[i];
       // Only the issue point moves: the consumers are fixed by the data flow,
@@ -154,15 +213,25 @@ if (root) {
     picked = i;
     rowHit.forEach((r, k) => r.classList.toggle("is-on", k === i));
     const side = mutation ? D!.on : D!.off;
-    view.select(i === -1 ? null : {
+    asm.select(i === -1 ? null : {
       lines: side.bars[i].lines, consumers: side.bars[i].consumers,
     });
   }
 
+  function pickWait(line: number, stalled: number, wmma: number) {
+    picked = -1;
+    rowHit.forEach((r) => r.classList.remove("is-on"));
+    view_select({ lines: [line], consumers: [],
+                  label: `s_wait_dscnt after W[${wmma}] — stalls on ${stalled} DS op${stalled === 1 ? "" : "s"}` });
+  }
+
+  const view_select = (t: { lines: number[]; consumers: number[]; label?: string } | null) =>
+    asm.select(t);
+
   async function setMutation(on: boolean, animate: boolean) {
     mutation = on;
     dagBtns.forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.dag === "on") === on)));
-    void view.show(on ? D!.asm.on : D!.asm.off).then(() => pick(picked));
+    void asm.show(on ? D!.asm.on : D!.asm.off).then(() => pick(picked));
     const from = alpha, to = on ? 1 : 0;
     if (!animate || from === to) { alpha = to; render(); return; }
     await play((a) => { alpha = lerp(from, to, a); render(); }, 620, smooth);
@@ -207,7 +276,7 @@ if (root) {
       void loadKernel(b.dataset.kernel!);
     }));
 
-  const view = new AsmView({
+  const asm = new AsmView({
     root,
     code: q<HTMLElement>(".av-code"),
     status: q<HTMLElement>(".av-status"),
@@ -215,6 +284,19 @@ if (root) {
     next: q<HTMLButtonElement>('[data-av="next"]'),
     toggle: q<HTMLButtonElement>('[data-av="scope"]'),
   });
+
+  Array.from(root.querySelectorAll<HTMLButtonElement>(".lr-view button")).forEach((b) =>
+    b.addEventListener("click", () => {
+      const want = b.dataset.view as "ranges" | "stalls";
+      if (want === view) return;
+      view = want;
+      root.querySelectorAll<HTMLButtonElement>(".lr-view button")
+        .forEach((o) => o.setAttribute("aria-pressed", String(o.dataset.view === want)));
+      root.classList.toggle("is-stalls", view === "stalls");
+      build();
+      render();
+      asm.select(null);
+    }));
 
   void loadKernel("mxfp");
 }

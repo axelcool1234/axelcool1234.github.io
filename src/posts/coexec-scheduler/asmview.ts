@@ -17,11 +17,18 @@
 
 const CACHE = new Map<string, string[]>();
 
-export interface AsmSide { file: string; loop: [number, number]; wmma: number[] }
+export interface AsmWait { stalled: number; wmma: number; line: number }
+export interface AsmSide {
+  file: string;
+  loop: [number, number];
+  wmma: number[];
+  waits: AsmWait[];
+}
 
 export interface AsmTarget {
-  lines: number[];        // this fragment's subloads
-  consumers: number[];    // WMMA indices that read it
+  lines: number[];        // the instructions this selection is about
+  consumers: number[];    // WMMA indices that read it, for a load fragment
+  label?: string;         // overrides the status line, for a wait stall
 }
 
 export class AsmView {
@@ -120,6 +127,7 @@ export class AsmView {
       else if (cons.has(n)) cls.push("is-cons");
       else if (/^\s+ds_load/.test(text)) cls.push("is-ds");
       else if (/^\s+v_wmma/.test(text)) cls.push("is-wmma");
+      else if (/^\s+s_wait_dscnt/.test(text)) cls.push("is-wait");
       if (n === here) cls.push("is-here");
       if (n < a || n > b) cls.push("is-outside");
       out.push(`<span class="${cls.join(" ")}" data-line="${n}">`
@@ -134,7 +142,9 @@ export class AsmView {
     this.o.prev.disabled = this.o.next.disabled = !this.jumps.length;
     this.o.toggle.textContent = this.whole ? "hot loop only" : "whole file";
     this.o.status.textContent = t
-      ? `${t.lines.length} subload${t.lines.length === 1 ? "" : "s"}, `
+      ? t.label
+        ? `${t.label}${this.cursor >= 0 ? ` — at line ${this.jumps[this.cursor]}` : ""}`
+        : `${t.lines.length} subload${t.lines.length === 1 ? "" : "s"}, `
         + `${t.consumers.length} consuming WMMA${t.consumers.length === 1 ? "" : "s"}`
         + (this.cursor >= 0 ? ` — at line ${this.jumps[this.cursor]}` : "")
       : `${s.file}, hot loop ${a}–${b}. Click a fragment above to trace it.`;

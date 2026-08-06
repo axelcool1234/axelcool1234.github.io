@@ -44,15 +44,22 @@ RE_WMMA = re.compile(r"^v_wmma")
 RE_WAIT = re.compile(r"^s_wait_dscnt\s+(0x[0-9a-fA-F]+|\d+)")
 
 
-def waits(path):
-    """Per s_wait_dscnt: (ops_waited_on, wmmas_in_interval, cumulative_wmmas)."""
+def waits(path, with_line=False):
+    """Per s_wait_dscnt: (ops_waited_on, wmmas_in_interval, cumulative_wmmas).
+
+    with_line appends the 1-based line number of the wait, which the website's
+    assembly viewer needs to jump to it. Kept as an opt-in fourth element so the
+    figure and extract-drains-data.py keep seeing the triples they expect --
+    there must be exactly one DSCNT model, not one per consumer.
+    """
     outstanding, wm, total, out = 0, 0, 0, []
-    for raw in open(path, errors="replace"):
+    for lineno, raw in enumerate(open(path, errors="replace"), 1):
         l = raw.strip()
         m = RE_WAIT.match(l)
         if m:
             n = int(m.group(1), 0)              # immediates are hex: 0x34
-            out.append((max(0, outstanding - n), wm, total))
+            rec = (max(0, outstanding - n), wm, total)
+            out.append(rec + (lineno,) if with_line else rec)
             outstanding = min(outstanding, n)
             wm = 0
             continue

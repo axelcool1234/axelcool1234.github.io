@@ -6,6 +6,43 @@
     765,
     1996
    ],
+   "waits": [
+    {
+     "line": 773,
+     "stalled": 0,
+     "wmma": 0
+    },
+    {
+     "line": 806,
+     "stalled": 0,
+     "wmma": 1
+    },
+    {
+     "line": 817,
+     "stalled": 0,
+     "wmma": 2
+    },
+    {
+     "line": 841,
+     "stalled": 0,
+     "wmma": 4
+    },
+    {
+     "line": 856,
+     "stalled": 0,
+     "wmma": 5
+    },
+    {
+     "line": 922,
+     "stalled": 0,
+     "wmma": 8
+    },
+    {
+     "line": 1467,
+     "stalled": 83,
+     "wmma": 56
+    }
+   ],
    "wmma": [
     774,
     807,
@@ -142,6 +179,153 @@
    "loop": [
     900,
     1641
+   ],
+   "waits": [
+    {
+     "line": 908,
+     "stalled": 0,
+     "wmma": 0
+    },
+    {
+     "line": 931,
+     "stalled": 0,
+     "wmma": 1
+    },
+    {
+     "line": 940,
+     "stalled": 0,
+     "wmma": 2
+    },
+    {
+     "line": 962,
+     "stalled": 0,
+     "wmma": 4
+    },
+    {
+     "line": 977,
+     "stalled": 0,
+     "wmma": 5
+    },
+    {
+     "line": 1029,
+     "stalled": 0,
+     "wmma": 8
+    },
+    {
+     "line": 1063,
+     "stalled": 0,
+     "wmma": 10
+    },
+    {
+     "line": 1114,
+     "stalled": 0,
+     "wmma": 16
+    },
+    {
+     "line": 1137,
+     "stalled": 0,
+     "wmma": 18
+    },
+    {
+     "line": 1187,
+     "stalled": 0,
+     "wmma": 24
+    },
+    {
+     "line": 1204,
+     "stalled": 0,
+     "wmma": 26
+    },
+    {
+     "line": 1276,
+     "stalled": 9,
+     "wmma": 33
+    },
+    {
+     "line": 1303,
+     "stalled": 4,
+     "wmma": 36
+    },
+    {
+     "line": 1305,
+     "stalled": 4,
+     "wmma": 37
+    },
+    {
+     "line": 1365,
+     "stalled": 9,
+     "wmma": 64
+    },
+    {
+     "line": 1378,
+     "stalled": 4,
+     "wmma": 65
+    },
+    {
+     "line": 1380,
+     "stalled": 4,
+     "wmma": 66
+    },
+    {
+     "line": 1390,
+     "stalled": 4,
+     "wmma": 68
+    },
+    {
+     "line": 1392,
+     "stalled": 4,
+     "wmma": 69
+    },
+    {
+     "line": 1397,
+     "stalled": 4,
+     "wmma": 72
+    },
+    {
+     "line": 1400,
+     "stalled": 4,
+     "wmma": 74
+    },
+    {
+     "line": 1409,
+     "stalled": 4,
+     "wmma": 80
+    },
+    {
+     "line": 1412,
+     "stalled": 4,
+     "wmma": 82
+    },
+    {
+     "line": 1419,
+     "stalled": 4,
+     "wmma": 88
+    },
+    {
+     "line": 1422,
+     "stalled": 4,
+     "wmma": 90
+    },
+    {
+     "line": 1451,
+     "stalled": 5,
+     "wmma": 96
+    },
+    {
+     "line": 1457,
+     "stalled": 4,
+     "wmma": 97
+    },
+    {
+     "line": 1461,
+     "stalled": 4,
+     "wmma": 100
+    },
+    {
+     "line": 1463,
+     "stalled": 4,
+     "wmma": 101
+    }
    ],
    "wmma": [
     909,

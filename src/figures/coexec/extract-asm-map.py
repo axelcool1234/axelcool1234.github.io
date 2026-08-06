@@ -43,6 +43,7 @@ import re
 import sys
 
 REPRO = os.environ.get("REPRO_DIR", "/home/asorenso/work/gfx1250/repro")
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 RE_LOOP = re.compile(r"^(\.LBB\d+_\d+):")
 RE_DS = re.compile(r"^\s+(ds_load\S*)\s+(.*)")
@@ -53,7 +54,9 @@ RE_REG = re.compile(r"v\[(\d+):(\d+)\](?:\s*/\*v\[(\d+):(\d+)\]\*/)?|v(\d+)(?:\s
 
 
 def load_parser(name, path):
-    spec = importlib.util.spec_from_file_location(name, os.path.join(REPRO, path))
+    """plot-drains.py sits beside this script; the log parsers live in REPRO."""
+    base = HERE if os.path.exists(os.path.join(HERE, path)) else REPRO
+    spec = importlib.util.spec_from_file_location(name, os.path.join(base, path))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -226,10 +229,19 @@ def main():
         ds, nwmma = tape_ds_order(tape_log)
         asm = parse_asm(asm_path)
         bad += annotate(doc[side], asm, ds, nwmma, f"{doc['kernel']}/{side}")
+        # The LDS wait stalls, from plot-drains.py's DSCNT model, with the line
+        # each s_wait_dscnt sits on so the viewer can jump to it. Only the ones
+        # inside the hot loop: the model is a linear pass over the whole file,
+        # but the figure and the widget are both about the loop.
+        pd = load_parser("plot_drains", "plot-drains.py")
+        lo, hi = asm["loop"]
+        waits = [{"stalled": s, "wmma": w, "line": ln}
+                 for s, _, w, ln in pd.waits(asm_path, with_line=True) if lo <= ln <= hi]
         doc["asm"][side] = {
             "file": asm["file"],
             "loop": asm["loop"],
             "wmma": [w["line"] for w in asm["wmmas"]],
+            "waits": waits,
         }
         print(f"  {doc['kernel']}/{side}: {asm['file']} loop {asm['loop'][0]}..{asm['loop'][1]}, "
               f"{len(asm['loads'])} loads, {len(asm['wmmas'])} wmma, "

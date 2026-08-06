@@ -370,6 +370,10 @@ The following chart shows how the DAG mutation affects the live ranges (and cons
       <button type="button" data-kernel="mxfp" aria-pressed="true">mxfp GEMM</button>
       <button type="button" data-kernel="f16" aria-pressed="false">f16 GEMM</button>
     </div>
+    <div class="lr-view" role="group" aria-label="View">
+      <button type="button" data-view="ranges" aria-pressed="true">live ranges</button>
+      <button type="button" data-view="stalls" aria-pressed="false">wait stalls</button>
+    </div>
     <div class="lr-dag" role="group" aria-label="DAG mutation">
       <button type="button" data-dag="off" aria-pressed="true">mutation off</button>
       <button type="button" data-dag="on" aria-pressed="false">mutation on</button>

@@ -9,6 +9,7 @@
       "cmin": 32,
       "earliest": 0,
       "maxpos": 35,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -19,6 +20,7 @@
       "cmin": 32,
       "earliest": 0,
       "maxpos": 60,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -29,6 +31,7 @@
       "cmin": 33,
       "earliest": 0,
       "maxpos": 61,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -39,6 +42,7 @@
       "cmin": 34,
       "earliest": 0,
       "maxpos": 62,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -49,6 +53,7 @@
       "cmin": 35,
       "earliest": 0,
       "maxpos": 63,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -59,6 +64,7 @@
       "cmin": 36,
       "earliest": 0,
       "maxpos": 39,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -69,6 +75,7 @@
       "cmin": 40,
       "earliest": 0,
       "maxpos": 43,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -79,6 +86,7 @@
       "cmin": 44,
       "earliest": 0,
       "maxpos": 47,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -89,6 +97,7 @@
       "cmin": 48,
       "earliest": 0,
       "maxpos": 51,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -99,6 +108,7 @@
       "cmin": 52,
       "earliest": 0,
       "maxpos": 55,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -109,6 +119,7 @@
       "cmin": 56,
       "earliest": 0,
       "maxpos": 59,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -119,6 +130,7 @@
       "cmin": 60,
       "earliest": 36,
       "maxpos": 63,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -129,6 +141,7 @@
       "cmin": 64,
       "earliest": 40,
       "maxpos": 67,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -139,6 +152,7 @@
       "cmin": 64,
       "earliest": 44,
       "maxpos": 92,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -149,6 +163,7 @@
       "cmin": 65,
       "earliest": 48,
       "maxpos": 93,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -159,6 +174,7 @@
       "cmin": 66,
       "earliest": 52,
       "maxpos": 94,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -169,6 +185,7 @@
       "cmin": 67,
       "earliest": 56,
       "maxpos": 95,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -179,6 +196,7 @@
       "cmin": 68,
       "earliest": 60,
       "maxpos": 71,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -189,6 +207,7 @@
       "cmin": 72,
       "earliest": 61,
       "maxpos": 75,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -199,6 +218,7 @@
       "cmin": 76,
       "earliest": 62,
       "maxpos": 79,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -209,6 +229,7 @@
       "cmin": 80,
       "earliest": 63,
       "maxpos": 83,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -219,6 +240,7 @@
       "cmin": 84,
       "earliest": 64,
       "maxpos": 87,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -229,6 +251,7 @@
       "cmin": 88,
       "earliest": 64,
       "maxpos": 91,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -239,6 +262,7 @@
       "cmin": 92,
       "earliest": 68,
       "maxpos": 95,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -249,6 +273,7 @@
       "cmin": 96,
       "earliest": 72,
       "maxpos": 99,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -259,6 +284,7 @@
       "cmin": 96,
       "earliest": 76,
       "maxpos": 124,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -269,6 +295,7 @@
       "cmin": 97,
       "earliest": 80,
       "maxpos": 125,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -279,6 +306,7 @@
       "cmin": 98,
       "earliest": 84,
       "maxpos": 126,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -289,6 +317,7 @@
       "cmin": 99,
       "earliest": 88,
       "maxpos": 127,
+      "nconsumers": 8,
       "vgprs": 8
     },
     {
@@ -299,6 +328,7 @@
       "cmin": 100,
       "earliest": 92,
       "maxpos": 103,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -309,6 +339,7 @@
       "cmin": 104,
       "earliest": 93,
       "maxpos": 107,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -319,6 +350,7 @@
       "cmin": 108,
       "earliest": 94,
       "maxpos": 111,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -329,6 +361,7 @@
       "cmin": 112,
       "earliest": 95,
       "maxpos": 115,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -339,6 +372,7 @@
       "cmin": 116,
       "earliest": 96,
       "maxpos": 119,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -349,6 +383,7 @@
       "cmin": 120,
       "earliest": 96,
       "maxpos": 123,
+      "nconsumers": 4,
       "vgprs": 8
     },
     {
@@ -359,6 +394,7 @@
       "cmin": 124,
       "earliest": 100,
       "maxpos": 127,
+      "nconsumers": 4,
       "vgprs": 8
     }
   ],

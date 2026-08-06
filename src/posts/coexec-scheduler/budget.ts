@@ -32,6 +32,7 @@ interface Frag {
   clamped: boolean;     // did the budget stop it short?
   blocked_at: number | null;
   blocked_hist: number | null;
+  nconsumers: number;   // WMMAs that actually read it, from extract-asm-map.py
 }
 
 interface Data {
@@ -224,8 +225,8 @@ if (root) {
          <ul>
            <li><strong>As late as possible</strong>: issued at W[${f.alap}], first read at
                W[${f.cmin}].</li>
-           <li><strong>Uses</strong> ${f.vgprs} VGPRs, live across ${f.maxpos - f.alap + 1} WMMAs from
-               issue to its last consumer, W[${f.maxpos}].</li>
+           <li><strong>Uses</strong> ${f.vgprs} VGPRs, consumed by ${f.nconsumers} WMMAs. Live until
+               the last consumer, W[${f.maxpos}].</li>
            <li>${pulled}</li>
          </ul>`;
     }

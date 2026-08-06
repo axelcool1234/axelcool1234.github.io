@@ -841,7 +841,7 @@
 .lr-svg { width: 100%; height: auto; display: block; }
 
 .lr-controls { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin: 0 0 0.7rem; }
-.lr-kernels, .lr-dag { display: flex; gap: 0.4rem; }
+.lr-kernels, .lr-dag, .lr-view { display: flex; gap: 0.4rem; }
 .lr-controls button {
   font: inherit;
   font-size: 0.82em;
@@ -886,6 +886,14 @@
 .lr-kinuse { background: var(--secondary); }
 .lr-kclamp { background: var(--primary); }
 .lr-kghost { background: var(--error); opacity: 0.3; }
+
+/* The wait-stall view. One bar per s_wait_dscnt, clickable straight through to
+   the instruction in the listing below. */
+.lr-stall { fill: var(--tertiary); pointer-events: none; }
+.lr-stallhit { fill: transparent; cursor: pointer; }
+.lr-stallhit:hover { fill: var(--on_surface); opacity: 0.07; }
+/* The live-range keys mean nothing in the stall view. */
+.lr.is-stalls .lr-legend { display: none; }
 
 
 /* --- the assembly listing ------------------------------------------------ */
@@ -942,6 +950,7 @@
 .av-l.is-outside { opacity: 0.5; }
 .av-l.is-ds { color: var(--error); }
 .av-l.is-wmma { color: var(--primary); }
+.av-l.is-wait { color: var(--tertiary); }
 
 /* The selected fragment and the WMMAs that read it, in the same two colours but
    at full strength with a tinted row, so they stand out from the other loads

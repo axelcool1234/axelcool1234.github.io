@@ -9,6 +9,7 @@
       "cmin": 32,
       "earliest": 0,
       "maxpos": 58,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -19,6 +20,7 @@
       "cmin": 32,
       "earliest": 0,
       "maxpos": 63,
+      "nconsumers": 32,
       "vgprs": 2
     },
     {
@@ -29,6 +31,7 @@
       "cmin": 33,
       "earliest": 0,
       "maxpos": 59,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -39,6 +42,7 @@
       "cmin": 36,
       "earliest": 0,
       "maxpos": 62,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -49,6 +53,7 @@
       "cmin": 37,
       "earliest": 0,
       "maxpos": 63,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -59,6 +64,7 @@
       "cmin": 64,
       "earliest": 0,
       "maxpos": 101,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -69,6 +75,7 @@
       "cmin": 64,
       "earliest": 0,
       "maxpos": 90,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -79,6 +86,7 @@
       "cmin": 64,
       "earliest": 0,
       "maxpos": 95,
+      "nconsumers": 32,
       "vgprs": 2
     },
     {
@@ -89,6 +97,7 @@
       "cmin": 65,
       "earliest": 0,
       "maxpos": 91,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -99,6 +108,7 @@
       "cmin": 66,
       "earliest": 0,
       "maxpos": 103,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -109,6 +119,7 @@
       "cmin": 68,
       "earliest": 0,
       "maxpos": 94,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -119,6 +130,7 @@
       "cmin": 69,
       "earliest": 0,
       "maxpos": 95,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -129,6 +141,7 @@
       "cmin": 72,
       "earliest": 0,
       "maxpos": 109,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -139,6 +152,7 @@
       "cmin": 74,
       "earliest": 0,
       "maxpos": 111,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -149,6 +163,7 @@
       "cmin": 80,
       "earliest": 0,
       "maxpos": 117,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -159,6 +174,7 @@
       "cmin": 82,
       "earliest": 0,
       "maxpos": 119,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -169,6 +185,7 @@
       "cmin": 88,
       "earliest": 59,
       "maxpos": 125,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -179,6 +196,7 @@
       "cmin": 90,
       "earliest": 60,
       "maxpos": 127,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -189,6 +207,7 @@
       "cmin": 96,
       "earliest": 63,
       "maxpos": 122,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -199,6 +218,7 @@
       "cmin": 96,
       "earliest": 64,
       "maxpos": 127,
+      "nconsumers": 32,
       "vgprs": 2
     },
     {
@@ -209,6 +229,7 @@
       "cmin": 97,
       "earliest": 64,
       "maxpos": 123,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -219,6 +240,7 @@
       "cmin": 100,
       "earliest": 91,
       "maxpos": 126,
+      "nconsumers": 8,
       "vgprs": 16
     },
     {
@@ -229,6 +251,7 @@
       "cmin": 101,
       "earliest": 92,
       "maxpos": 127,
+      "nconsumers": 8,
       "vgprs": 16
     }
   ],
