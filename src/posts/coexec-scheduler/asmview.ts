@@ -98,7 +98,10 @@ export class AsmView {
     this.render();
   }
 
-  select(t: AsmTarget | null): void {
+  // scroll=false when the selection came from clicking the listing itself:
+  // moving the pane out from under the pointer is disorienting, and it makes a
+  // WMMA impossible to click twice to cycle through the fragments it reads.
+  select(t: AsmTarget | null, scroll = true): void {
     this.target = t;
     // Subloads first, then the consumers, which is the order you would read
     // them in: where the value is produced, then where it is finally used.
@@ -109,7 +112,7 @@ export class AsmView {
       : [];
     this.cursor = this.jumps.length ? 0 : -1;
     this.render();
-    if (this.cursor >= 0) this.scrollTo(this.jumps[0]);
+    if (scroll && this.cursor >= 0) this.scrollTo(this.jumps[0]);
   }
 
   private step(d: number): void {

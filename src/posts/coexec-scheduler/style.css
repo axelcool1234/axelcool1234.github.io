@@ -356,6 +356,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  /* f16 puts 25 blocks in here, which is taller than everything beside it.
+     Past this the column scrolls instead of growing. The JS clamps its own
+     min-height lock to the same value -- min-height beats max-height, so
+     without that the cap would never engage. */
+  max-height: 21rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .te-block {
@@ -1037,3 +1044,28 @@
 .rs-key { flex: 0 0 auto; width: 1.1rem; height: 0.55rem; border-radius: 2px; }
 .rs-koff { background: var(--error); }
 .rs-kon { background: var(--primary); }
+
+/* Must come AFTER the .te-blocks base rule, not in the earlier breakpoint block
+   with the ready-queue overrides: same specificity, so source order decides and
+   the later `flex-direction: column` was winning inside the media query. */
+@media (max-width: 34rem) {
+  /* Stacked, the queue owns the full width and a tall column wastes all of it.
+     A horizontal strip that scrolls sideways reads better and keeps the figure
+     short. */
+  /* align-items must become stretch: the base rule is flex-start, which in a
+     column container sizes each item to its own content width -- so the queue
+     grew to 2331px instead of filling the figure. min-width:0 as well, since a
+     flex item defaults to min-width:auto and refuses to shrink below its
+     content, which is what stopped overflow-x from ever engaging. */
+  .te-stage { flex-direction: column; align-items: stretch; }
+  .te-queue { flex: 0 0 auto; width: 100%; min-width: 0; }
+  .te-blocks {
+    flex-direction: row;
+    min-width: 0;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.25rem;
+  }
+  .te-block { flex: 0 0 auto; }
+}

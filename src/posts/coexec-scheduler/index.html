@@ -286,7 +286,7 @@ The DAG mutation starts with every load fragment's window being as short and as 
   <ul class="bw-legend">
     <li><span class="bw-key bw-kheld"></span>held live but not yet read</li>
     <li><span class="bw-key bw-kinuse"></span>in use (first to last consumer)</li>
-    <li><span class="bw-key bw-kclamp"></span>in use, gained a WMMA &rarr; ds_load edge (first to last consumer)</li>
+    <li><span class="bw-key bw-kclamp"></span>in use (first to last consumer), gained a WMMA &rarr; ds_load edge</li>
   </ul>
   <div class="bw-info"></div>
   <div class="bw-controls">
@@ -386,7 +386,7 @@ The following chart shows how the DAG mutation affects the live ranges (and cons
   <ul class="lr-legend">
     <li><span class="lr-key lr-kheld"></span>held live but not yet read</li>
     <li><span class="lr-key lr-kinuse"></span>in use (first to last consumer)</li>
-    <li><span class="lr-key lr-kclamp"></span>in use, gained a WMMA &rarr; ds_load edge (first to last consumer)</li>
+    <li><span class="lr-key lr-kclamp"></span>in use (first to last consumer), gained a WMMA &rarr; ds_load edge</li>
     <li><span class="lr-key lr-kghost"></span>held live without the mutation</li>
   </ul>
 

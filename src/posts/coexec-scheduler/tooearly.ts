@@ -44,6 +44,18 @@ if (root) {
   const heldAt = (upto: number, at: number) =>
     FR.slice(0, upto).reduce((s, f) => s + (f.cmin > at ? f.vgprs : 0), 0);
 
+  // Freeze the column at its full height so it does not shrink under the
+  // timeline as it drains -- but never past the CSS cap, because min-height
+  // wins over max-height and would stop the column ever scrolling. In the
+  // narrow layout the blocks run horizontally and the height must not be
+  // pinned at all.
+  function lockQueue(full: number) {
+    const cs = getComputedStyle(queue);
+    if (cs.flexDirection.startsWith("row")) { queue.style.minHeight = ""; return; }
+    const cap = parseFloat(cs.maxHeight);
+    queue.style.minHeight = `${Number.isFinite(cap) ? Math.min(full, cap) : full}px`;
+  }
+
   function buildQueue() {
     queue.style.minHeight = "";
     queue.replaceChildren(...FR.map((f) => {
@@ -55,7 +67,7 @@ if (root) {
     // Reading offsetHeight forces layout, so this is the height with every
     // block present; without it the column shrinks block by block and drags
     // the timeline up the page as the queue drains.
-    queue.style.minHeight = `${queue.offsetHeight}px`;
+    lockQueue(queue.offsetHeight);
   }
 
   function moveNow(to: number, runTime: number) {

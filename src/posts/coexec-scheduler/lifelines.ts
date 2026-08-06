@@ -234,16 +234,20 @@ if (root) {
 
   // The listing shows whichever run the toggle is on, so a fragment stays
   // selected across the switch and you see the same load in both schedules.
-  function pick(i: number) {
+  // scroll=false for selections made by clicking the listing: moving the pane
+  // under the pointer is disorienting, and it made a WMMA impossible to click
+  // twice to cycle through the fragments it reads.
+  function pick(i: number, scroll = true) {
     picked = i;
     rowHit.forEach((r, k) => r.classList.toggle("is-on", k === i));
     const side = mutation ? D!.on : D!.off;
     asm.select(i === -1 ? null : {
       lines: side.bars[i].lines, consumers: side.bars[i].consumers,
-    });
+    }, scroll);
   }
 
-  function pickWait(line: number, stalled: number, wmma: number, ops: number[] = []) {
+  function pickWait(line: number, stalled: number, wmma: number, ops: number[] = [],
+                    scroll = true) {
     picked = -1;
     pickedWait = line;
     rowHit.forEach((r) => r.classList.remove("is-on"));
@@ -252,7 +256,7 @@ if (root) {
     view_select({
       lines: [line], consumers: [], ops, kind: "wait",
       label: `s_wait_dscnt after W[${wmma}], stalls on ${stalled} DS op${stalled === 1 ? "" : "s"}`,
-    });
+    }, scroll);
   }
 
   function setView(want: "ranges" | "stalls") {
@@ -270,13 +274,13 @@ if (root) {
   // through them rather than silently picking one.
   function fromLine(line: number) {
     const f = subOf.get(line);
-    if (f !== undefined) { setView("ranges"); cycle = 0; pick(f); return; }
+    if (f !== undefined) { setView("ranges"); cycle = 0; pick(f, false); return; }
     const fs = consOf.get(line);
     if (fs && fs.length) {
       setView("ranges");
       const same = fs.includes(picked);
       cycle = same ? (fs.indexOf(picked) + 1) % fs.length : 0;
-      pick(fs[cycle]);
+      pick(fs[cycle], false);
       return;
     }
     const w = waitOf.get(line);
@@ -284,7 +288,7 @@ if (root) {
       setView("stalls");
       const side = mutation ? D!.asm.on : D!.asm.off;
       const ww = side.waits[w];
-      pickWait(ww.line, ww.stalled, ww.wmma, ww.ops);
+      pickWait(ww.line, ww.stalled, ww.wmma, ww.ops, false);
     }
   }
 
@@ -309,7 +313,7 @@ if (root) {
   const view_select = (t: {
     lines: number[]; consumers: number[]; label?: string;
     kind?: "load" | "wait"; ops?: number[];
-  } | null) => asm.select(t);
+  } | null, scroll = true) => asm.select(t, scroll);
 
   async function setMutation(on: boolean, animate: boolean) {
     mutation = on;
