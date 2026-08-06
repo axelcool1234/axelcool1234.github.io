@@ -74,6 +74,12 @@ if (root) {
   // "ranges" is the live-range/pressure pair; "stalls" is the LDS wait figure
   // over the same WMMA axis. Same data file, same assembly viewer underneath.
   let view: "ranges" | "stalls" = "ranges";
+  let pickedWait = -1;              // index into the active side's waits
+  // line -> what it is on the chart, rebuilt whenever the side changes
+  let subOf = new Map<number, number>();
+  let consOf = new Map<number, number[]>();
+  let waitOf = new Map<number, number>();
+  let cycle = 0;                    // which of a WMMA's fragments to show next
   let curveGhost: SVGElement, curveLive: SVGElement;
   let fillGhost: SVGElement, fillLive: SVGElement;
 
@@ -156,13 +162,15 @@ if (root) {
         // transparent full-height target, so all of them are reachable and the
         // bars stay honest.
         const hit = svgEl("rect", {
-          class: `lr-stallhit lr-${key}`, x: x(w.wmma) - Math.max(bw, 5) / 2,
+          class: `lr-stallhit lr-${key}${w.line === pickedWait ? " is-on" : ""}`,
+          x: x(w.wmma) - Math.max(bw, 5) / 2,
           y: G.barsTop, width: Math.max(bw, 5), height: G.histBot - G.barsTop,
         });
+        (hit as SVGElement & { dataset: DOMStringMap }).dataset.line = String(w.line);
         hit.addEventListener("pointerdown", (ev) => {
           ev.stopPropagation();
           ev.preventDefault();
-          pickWait(w.line, w.stalled, w.wmma);
+          pickWait(w.line, w.stalled, w.wmma, w.ops);
         });
         svg.append(r, hit);
       }
@@ -235,23 +243,78 @@ if (root) {
     });
   }
 
-  function pickWait(line: number, stalled: number, wmma: number) {
+  function pickWait(line: number, stalled: number, wmma: number, ops: number[] = []) {
     picked = -1;
+    pickedWait = line;
     rowHit.forEach((r) => r.classList.remove("is-on"));
+    svg.querySelectorAll<SVGElement>(".lr-stallhit")
+      .forEach((e) => e.classList.toggle("is-on", e.dataset.line === String(line)));
     view_select({
-      lines: [line], consumers: [], kind: "wait",
+      lines: [line], consumers: [], ops, kind: "wait",
       label: `s_wait_dscnt after W[${wmma}] - stalls on ${stalled} DS op${stalled === 1 ? "" : "s"}`,
     });
   }
 
+  function setView(want: "ranges" | "stalls") {
+    if (want === view) return;
+    view = want;
+    root!.querySelectorAll<HTMLButtonElement>(".lr-view button")
+      .forEach((o) => o.setAttribute("aria-pressed", String(o.dataset.view === want)));
+    root!.classList.toggle("is-stalls", view === "stalls");
+    build();
+    render();
+  }
+
+  // The listing points back at the chart. A subload or a wait maps to exactly
+  // one thing; a WMMA reads two or three fragments, so clicking it again cycles
+  // through them rather than silently picking one.
+  function fromLine(line: number) {
+    const f = subOf.get(line);
+    if (f !== undefined) { setView("ranges"); cycle = 0; pick(f); return; }
+    const fs = consOf.get(line);
+    if (fs && fs.length) {
+      setView("ranges");
+      const same = fs.includes(picked);
+      cycle = same ? (fs.indexOf(picked) + 1) % fs.length : 0;
+      pick(fs[cycle]);
+      return;
+    }
+    const w = waitOf.get(line);
+    if (w !== undefined) {
+      setView("stalls");
+      const side = mutation ? D!.asm.on : D!.asm.off;
+      const ww = side.waits[w];
+      pickWait(ww.line, ww.stalled, ww.wmma, ww.ops);
+    }
+  }
+
+  function indexSide() {
+    const side = mutation ? D!.on : D!.off;
+    const asmSide = mutation ? D!.asm.on : D!.asm.off;
+    subOf = new Map(); consOf = new Map(); waitOf = new Map();
+    side.bars.forEach((b, i) => {
+      b.lines.forEach((l) => subOf.set(l, i));
+      b.consumers.forEach((k) => {
+        const l = asmSide.wmma[k];
+        if (l === undefined) return;
+        const cur = consOf.get(l) ?? [];
+        cur.push(i);
+        consOf.set(l, cur);
+      });
+    });
+    asmSide.waits.forEach((w, i) => waitOf.set(w.line, i));
+    asm.setClickable([...subOf.keys(), ...consOf.keys(), ...waitOf.keys()]);
+  }
+
   const view_select = (t: {
-    lines: number[]; consumers: number[]; label?: string; kind?: "load" | "wait";
+    lines: number[]; consumers: number[]; label?: string;
+    kind?: "load" | "wait"; ops?: number[];
   } | null) => asm.select(t);
 
   async function setMutation(on: boolean, animate: boolean) {
     mutation = on;
     dagBtns.forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.dag === "on") === on)));
-    void asm.show(on ? D!.asm.on : D!.asm.off).then(() => pick(picked));
+    void asm.show(on ? D!.asm.on : D!.asm.off).then(() => { indexSide(); pick(picked); });
     const from = alpha, to = on ? 1 : 0;
     if (!animate || from === to) { alpha = to; render(); return; }
     await play((a) => { alpha = lerp(from, to, a); render(); }, 620, smooth);
@@ -305,18 +368,12 @@ if (root) {
     prev: q<HTMLButtonElement>('[data-av="prev"]'),
     next: q<HTMLButtonElement>('[data-av="next"]'),
     toggle: q<HTMLButtonElement>('[data-av="scope"]'),
+    onLine: (line) => fromLine(line),
   });
 
   Array.from(root.querySelectorAll<HTMLButtonElement>(".lr-view button")).forEach((b) =>
     b.addEventListener("click", () => {
-      const want = b.dataset.view as "ranges" | "stalls";
-      if (want === view) return;
-      view = want;
-      root.querySelectorAll<HTMLButtonElement>(".lr-view button")
-        .forEach((o) => o.setAttribute("aria-pressed", String(o.dataset.view === want)));
-      root.classList.toggle("is-stalls", view === "stalls");
-      build();
-      render();
+      setView(b.dataset.view as "ranges" | "stalls");
       asm.select(null);
     }));
 

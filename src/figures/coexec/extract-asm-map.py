@@ -235,8 +235,11 @@ def main():
         # but the figure and the widget are both about the loop.
         pd = load_parser("plot_drains", "plot-drains.py")
         lo, hi = asm["loop"]
-        waits = [{"stalled": s, "wmma": w, "line": ln}
-                 for s, _, w, ln in pd.waits(asm_path, with_line=True) if lo <= ln <= hi]
+        waits = [{"stalled": s, "wmma": w, "line": ln, "ops": ops}
+                 for s, _, w, ln, ops in pd.waits(asm_path, with_line=True) if lo <= ln <= hi]
+        for w in waits:
+            assert len(w["ops"]) == w["stalled"], \
+                f"{tag}: wait at line {w['line']} stalls on {w['stalled']} ops but lists {len(w['ops'])}"
         doc["asm"][side] = {
             "file": asm["file"],
             "loop": asm["loop"],

@@ -861,8 +861,14 @@
 /* Opacity and width are set per frame from the toggle's position, not by a
    class: at mutation-off the "on" curve is fully hidden rather than ghosted,
    and the "off" curve fades back into being the ghost as you switch. */
+/* Same treatment as the budget chart's histogram: a light wash under a thin
+   line, not a solid block. The live pair had no opacity at all, so the fill
+   defaulted to 1 and swallowed the curve. */
 .lr-curve { fill: none; stroke: var(--on_surface_variant); }
 .lr-fill { fill: var(--on_surface_variant); }
+.lr-curve.lr-live { stroke-width: 1.4; }
+.lr-fill.lr-live { opacity: 0.2; }
+.lr-curve.lr-ghostc { stroke-width: 1.1; }
 
 /* Where the bar reached before the mutation shortened it. Tinted like the held
    span it is a ghost of, not neutral: a grey ghost was hard to tell from the
@@ -892,6 +898,7 @@
 .lr-stall { fill: var(--tertiary); pointer-events: none; }
 .lr-stallhit { fill: transparent; cursor: pointer; }
 .lr-stallhit:hover { fill: var(--on_surface); opacity: 0.07; }
+.lr-stallhit.is-on { fill: var(--on_surface); opacity: 0.12; }
 /* The live-range keys mean nothing in the stall view. */
 .lr.is-stalls .lr-legend { display: none; }
 
@@ -959,8 +966,16 @@
 /* A picked wait takes the wait colour, not the load colour -- it is neither a
    subload nor a consumer, and reusing the red made it read as one. */
 .av-l.is-waitsel { color: var(--tertiary); font-weight: 600; background: color-mix(in srgb, var(--tertiary) 14%, transparent); }
+/* The DS ops a selected wait is actually waiting on. Load-coloured, because
+   that is what they are, but lighter than a picked fragment so the wait itself
+   stays the focus. */
+.av-l.is-op { color: var(--error); background: color-mix(in srgb, var(--error) 7%, transparent); }
 .av-l.is-cons { color: var(--primary); font-weight: 600; background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .av-l.is-here { outline: 1px solid var(--outline); outline-offset: -1px; }
+/* Only the instructions that map back to something on the chart invite a
+   click; the rest of the listing is inert. */
+.av-l.is-clickable { cursor: pointer; }
+.av-l.is-clickable:hover { background: color-mix(in srgb, var(--on_surface) 8%, transparent); }
 
 .lr-rowhit { fill: transparent; cursor: pointer; }
 .lr-rowhit.is-on { fill: var(--on_surface); opacity: 0.07; }

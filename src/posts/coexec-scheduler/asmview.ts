@@ -17,7 +17,12 @@
 
 const CACHE = new Map<string, string[]>();
 
-export interface AsmWait { stalled: number; wmma: number; line: number }
+export interface AsmWait {
+  stalled: number;
+  wmma: number;
+  line: number;
+  ops: number[];      // the DS ops this wait actually waits on, oldest first
+}
 export interface AsmSide {
   file: string;
   loop: [number, number];
@@ -30,6 +35,7 @@ export interface AsmTarget {
   consumers: number[];    // WMMA indices that read it, for a load fragment
   label?: string;         // overrides the status line, for a wait stall
   kind?: "load" | "wait"; // which colour the picked lines take
+  ops?: number[];         // DS ops a wait waits on, walked after it
 }
 
 export class AsmView {
@@ -39,6 +45,9 @@ export class AsmView {
   private whole = false;
   private cursor = -1;        // index into the flattened jump list
   private jumps: number[] = [];
+  // Lines that map back to something on the chart. Everything else in the
+  // listing is inert, and says so by not offering a pointer.
+  private clickable = new Set<number>();
 
   constructor(private o: {
     root: HTMLElement;
@@ -47,7 +56,16 @@ export class AsmView {
     prev: HTMLButtonElement;
     next: HTMLButtonElement;
     toggle: HTMLButtonElement; // loop only <-> whole file
+    onLine?: (line: number) => void;   // a clickable instruction was picked
   }) {
+    // Delegated, because the listing is re-rendered on every selection and
+    // per-line listeners would have to be reattached each time.
+    o.code.addEventListener("pointerdown", (ev) => {
+      const el = (ev.target as Element).closest<HTMLElement>(".av-l.is-clickable");
+      if (!el || !o.onLine) return;
+      ev.preventDefault();
+      o.onLine(Number(el.dataset.line));
+    });
     o.prev.addEventListener("click", () => this.step(-1));
     o.next.addEventListener("click", () => this.step(1));
     o.toggle.addEventListener("click", () => {
@@ -75,12 +93,19 @@ export class AsmView {
     this.render();
   }
 
+  setClickable(lines: Iterable<number>): void {
+    this.clickable = new Set(lines);
+    this.render();
+  }
+
   select(t: AsmTarget | null): void {
     this.target = t;
     // Subloads first, then the consumers, which is the order you would read
     // them in: where the value is produced, then where it is finally used.
     this.jumps = t
-      ? [...t.lines, ...t.consumers.map((k) => this.side!.wmma[k]).filter((n) => n !== undefined)]
+      ? [...t.lines,
+         ...(t.ops ?? []),
+         ...t.consumers.map((k) => this.side!.wmma[k]).filter((n) => n !== undefined)]
       : [];
     this.cursor = this.jumps.length ? 0 : -1;
     this.render();
@@ -95,7 +120,14 @@ export class AsmView {
   }
 
   private scrollTo(line: number): void {
-    const el = this.o.code.querySelector<HTMLElement>(`[data-line="${line}"]`);
+    let el = this.o.code.querySelector<HTMLElement>(`[data-line="${line}"]`);
+    if (!el && !this.whole) {
+      // A wait can wait on ops issued before the loop was entered. Rather than
+      // a dead arrow, widen to the whole file so the target exists.
+      this.whole = true;
+      this.render();
+      el = this.o.code.querySelector<HTMLElement>(`[data-line="${line}"]`);
+    }
     if (!el) return;
     // scrollIntoView would scroll the page as well as the pane; this only moves
     // the pane, which is what you want when the chart above must stay put.
@@ -115,6 +147,7 @@ export class AsmView {
     const to = this.whole ? this.lines.length : b;
 
     const sub = new Set(this.target?.lines ?? []);
+    const ops = new Set(this.target?.ops ?? []);
     const cons = new Set((this.target?.consumers ?? [])
       .map((k) => s.wmma[k]).filter((n) => n !== undefined));
     const wmma = new Set(s.wmma);
@@ -125,11 +158,13 @@ export class AsmView {
       const text = this.lines[n - 1] ?? "";
       const cls = ["av-l"];
       if (sub.has(n)) cls.push(this.target?.kind === "wait" ? "is-waitsel" : "is-sub");
+      else if (ops.has(n)) cls.push("is-op");
       else if (cons.has(n)) cls.push("is-cons");
       else if (/^\s+ds_load/.test(text)) cls.push("is-ds");
       else if (/^\s+v_wmma/.test(text)) cls.push("is-wmma");
       else if (/^\s+s_wait_dscnt/.test(text)) cls.push("is-wait");
       if (n === here) cls.push("is-here");
+      if (this.clickable.has(n)) cls.push("is-clickable");
       if (n < a || n > b) cls.push("is-outside");
       out.push(`<span class="${cls.join(" ")}" data-line="${n}">`
         + `<i>${n}</i>${esc(text) || " "}</span>`);
@@ -144,7 +179,8 @@ export class AsmView {
     this.o.toggle.textContent = this.whole ? "hot loop only" : "whole file";
     this.o.status.textContent = t
       ? t.label
-        ? `${t.label}${this.cursor >= 0 ? ` - at line ${this.jumps[this.cursor]}` : ""}`
+        ? `${t.label}${this.cursor >= 0 ? ` - at line ${this.jumps[this.cursor]}`
+             + (this.cursor === 0 ? "" : ` (op ${this.cursor} of ${(t.ops ?? []).length})`) : ""}`
         : `${t.lines.length} subload${t.lines.length === 1 ? "" : "s"}, `
         + `${t.consumers.length} consuming WMMA${t.consumers.length === 1 ? "" : "s"}`
         + (this.cursor >= 0 ? ` - at line ${this.jumps[this.cursor]}` : "")

@@ -47,24 +47,37 @@ RE_WAIT = re.compile(r"^s_wait_dscnt\s+(0x[0-9a-fA-F]+|\d+)")
 def waits(path, with_line=False):
     """Per s_wait_dscnt: (ops_waited_on, wmmas_in_interval, cumulative_wmmas).
 
-    with_line appends the 1-based line number of the wait, which the website's
-    assembly viewer needs to jump to it. Kept as an opt-in fourth element so the
-    figure and extract-drains-data.py keep seeing the triples they expect --
-    there must be exactly one DSCNT model, not one per consumer.
+    with_line appends the wait's own 1-based line number AND the lines of the DS
+    ops it actually waits on, which the website's assembly viewer needs to jump
+    between them. Kept as an opt-in so the figure and extract-drains-data.py
+    keep seeing the triples they expect -- there must be exactly one DSCNT
+    model, not one per consumer.
+
+    Which ops a wait waits on follows from the counter being a count of
+    outstanding operations that retire in order: `s_wait_dscnt N` blocks until
+    at most N remain, so it waits on the OLDEST `outstanding - N` of them. The
+    same in-flight queue that produces the count therefore produces the list,
+    at no extra cost and with no extra assumption.
     """
     outstanding, wm, total, out = 0, 0, 0, []
+    inflight = []                                # line numbers, oldest first
     for lineno, raw in enumerate(open(path, errors="replace"), 1):
         l = raw.strip()
         m = RE_WAIT.match(l)
         if m:
             n = int(m.group(1), 0)              # immediates are hex: 0x34
-            rec = (max(0, outstanding - n), wm, total)
-            out.append(rec + (lineno,) if with_line else rec)
+            k = max(0, outstanding - n)
+            rec = (k, wm, total)
+            if with_line:
+                rec = rec + (lineno, inflight[:k])
+            out.append(rec)
+            inflight = inflight[k:]
             outstanding = min(outstanding, n)
             wm = 0
             continue
         if RE_DS.match(l):                       # loads AND stores bump DSCNT
             outstanding += 1
+            inflight.append(lineno)
         elif RE_WMMA.match(l):
             wm += 1
             total += 1
