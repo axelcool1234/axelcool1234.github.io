@@ -1024,13 +1024,6 @@
 .rs-value { font-family: monospace; font-size: 11px; fill: var(--on_surface); }
 .rs-kernel { font-family: monospace; font-size: 10px; fill: var(--on_surface_variant); }
 
-.rs-caption {
-  margin: 0.6rem 0 0;
-  font-size: 0.85em;
-  font-variant-numeric: tabular-nums;
-  color: var(--on_surface);
-}
-
 .rs-legend {
   list-style: none;
   margin: 0.5rem 0 0;

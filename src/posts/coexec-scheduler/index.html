@@ -413,9 +413,28 @@ The following are some metrics of the kernels we've been examining, determined b
   <div class="rs-tabs" role="group" aria-label="Metric"></div>
   <svg class="rs-svg" viewBox="0 0 680 300" role="img"
        aria-label="Before and after bars for the selected metric, on both kernels"></svg>
-  <p class="rs-caption"></p>
   <ul class="rs-legend">
     <li><span class="rs-key rs-koff"></span>no mutation</li>
     <li><span class="rs-key rs-kon"></span>with mutation</li>
   </ul>
 </figure>
+
+<h2>Conclusion</h2>
+
+<p>
+Based on the data, you can see that the (albeit minute amount of) kernels that have been run against this DAG mutation either stay relatively the same or improve massively. Some future work: 
+<ul>
+    <li>
+    To ensure the robustness of this pass before it’s merged, we’ll need to run this against a wider corpus of kernels.
+    </li>
+    <li>
+    Some of the code in the DAG mutation, like <code>FragInfo</code>, may need to be more generalized.
+    </li>
+    <li>
+    I ran a version of this DAG mutation that only kept the edges between an earlier WMMA &rarr; <code>ds_load</code> to ensure that the <code>ds_load</code>s are not scheduled too early and found that the results were very similar to what we see here. This indicates that many of the edges added are not entirely necessary because the CoExecScheduler handles them fine on its own. However, further testing on a wider corpus of kernels is needed to prove this with certainty. Note, setting the correct latency on the edge between a <code>ds_load</code> and its earliest WMMA consumer will need to be kept as well, as the CoExecScheduler provides a different latency than the default. So, if this DAG mutation is to be slimmed down, this would need to be kept as well.
+    </li>
+    <li>
+    Ultimately, the CoExecScheduler itself should be changed to have non-greedy register pressure awareness and the ability to reject all instructions in its available queue and schedule nothing instead.
+    </li>
+</ul>
+</p>

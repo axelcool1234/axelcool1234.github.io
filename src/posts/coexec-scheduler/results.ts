@@ -22,7 +22,6 @@ interface Panel {
   on: number[];
   scale: "lin" | "log";
   fmt: string;
-  caption: string;
 }
 interface Data { kernels: string[]; panels: Panel[] }
 
@@ -34,7 +33,6 @@ if (root) {
   const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
   const svg = q<SVGSVGElement>(".rs-svg");
   const tabs = q<HTMLElement>(".rs-tabs");
-  const caption = q<HTMLElement>(".rs-caption");
 
   let D: Data | null = null;
   let sel = 0;
@@ -114,7 +112,6 @@ if (root) {
     ylab.textContent = p.title + (logs ? " (log scale)" : "");
     svg.appendChild(ylab);
 
-    caption.textContent = p.caption.replace(/\s*\/\s*/, "   |   ");
   }
 
   function select(i: number) {
@@ -132,7 +129,9 @@ if (root) {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       d = (await r.json()) as Data;
     } catch {
-      caption.textContent = "could not load results.json";
+      // The caption used to absorb this; with it gone the tabs are the only
+      // element guaranteed to exist before the data arrives.
+      tabs.textContent = "could not load results.json";
       return;
     }
     D = d;
