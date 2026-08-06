@@ -270,7 +270,12 @@
   cursor: pointer;
 }
 
-.rq-controls button:hover {
+/* Disabled arrows read as disabled, as they already did in the budget widget:
+   at step 0 the back arrow is dead in every one of these, and only one of them
+   was saying so. :not(:disabled) on the hover too, so a dead button does not
+   light up under the pointer. */
+.rq-controls button:disabled { opacity: 0.4; cursor: default; }
+.rq-controls button:hover:not(:disabled) {
   background: var(--hover);
   color: var(--on_hover);
 }
@@ -354,11 +359,16 @@
 .te-stage {
   display: flex;
   gap: 0.9rem;
-  align-items: flex-start;
+  /* stretch, so the queue column is as tall as the timeline beside it and the
+     scroll box can fill that height instead of leaving it blank. */
+  align-items: stretch;
   flex-wrap: wrap;
 }
 
-.te-queue { flex: 0 0 11rem; }   /* fixed: content-sized, it re-widths as blocks leave */
+/* Fixed width, and a column so the block list can flex to fill what is left
+   after the heading and the note. */
+.te-queue { flex: 0 0 11rem; display: flex; flex-direction: column; }
+.te-queue h4, .te-none { flex: 0 0 auto; }
 .te-mid   { flex: 1 1 22rem; min-width: 0; display: flex; gap: 0.8rem; align-items: flex-start; }
 .te-compcol { flex: 1 1 0; min-width: 0; }
 .te-count { flex: 0 0 auto; text-align: right; }
@@ -375,11 +385,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  /* Exactly the height the mxfp GEMM's seven blocks need, so both kernels
-     present the same size box and f16's 25 scroll inside it. The JS clamps its
-     own min-height lock to this value -- min-height beats max-height, so
-     without that the cap would never engage. */
-  max-height: 12.2rem;
+  /* Fills the column rather than taking a fixed height: f16's 25 blocks then
+     use all the room the timeline beside them already occupies, and scroll for
+     the rest, so the figure never grows to accommodate the queue. min-height:0
+     is what lets a flex item shrink below its content and actually scroll. */
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -515,7 +526,8 @@
   cursor: pointer;
 }
 
-.te-controls button:hover { background: var(--hover); color: var(--on_hover); }
+.te-controls button:disabled { opacity: 0.4; cursor: default; }
+.te-controls button:hover:not(:disabled) { background: var(--hover); color: var(--on_hover); }
 
 .te-progress {
   font-size: 0.85em;
@@ -1082,9 +1094,9 @@
   .te-stage { flex-direction: column; align-items: stretch; }
   .te-queue { flex: 0 0 auto; width: 100%; min-width: 0; }
   .te-blocks {
+    flex: 0 0 auto;
     flex-direction: row;
     min-width: 0;
-    max-height: none;
     overflow-x: auto;
     overflow-y: hidden;
     padding-bottom: 0.25rem;

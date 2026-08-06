@@ -27,6 +27,7 @@ const root = document.getElementById("dr");
 if (root) {
   const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
   const queue = q<HTMLElement>(".te-blocks");
+  const qcol = q<HTMLElement>(".te-queue");
   const rows = q<HTMLElement>(".te-rows");
   const comp = q<HTMLElement>(".te-comp");
   const verdict = q<HTMLElement>(".te-verdict");
@@ -54,16 +55,24 @@ if (root) {
   const heldAt = (upto: number, at: number) =>
     FR.slice(0, upto).reduce((s, f) => s + (f.cmin > at ? f.vgprs : 0), 0);
 
-  // Freeze the column at its full height so it does not shrink under the
-  // timeline as it drains -- but never past the CSS cap, because min-height
-  // wins over max-height and would stop the column ever scrolling. In the
-  // narrow layout the blocks run horizontally and the height must not be
-  // pinned at all.
-  function lockQueue(full: number) {
-    const cs = getComputedStyle(queue);
-    if (cs.flexDirection.startsWith("row")) { queue.style.minHeight = ""; return; }
-    const cap = parseFloat(cs.maxHeight);
-    queue.style.minHeight = `${Number.isFinite(cap) ? Math.min(full, cap) : full}px`;
+  // How tall the whole stage should be, pinned once with the queue full so the
+  // figure keeps its height as the queue drains.
+  //
+  // The block list is flex: 1 1 0, which fills the column but contributes
+  // nothing to its natural height -- so left to itself the stage collapses to
+  // whatever the timeline needs and a seven-block queue no longer fits. The
+  // height is therefore computed: at least as tall as the timeline, and at
+  // least as tall as the queue wants, but never more than QUEUE_CAP, which is
+  // what stops f16's 25 blocks from growing the figure instead of scrolling.
+  const QUEUE_CAP = 26 * 16;
+  const stage = q<HTMLElement>(".te-stage");
+  const right = q<HTMLElement>(".te-right");
+  function lockQueue() {
+    stage.style.minHeight = "";
+    if (getComputedStyle(queue).flexDirection.startsWith("row")) return;
+    const chrome = qcol.offsetHeight - queue.offsetHeight;   // heading + note
+    const wanted = chrome + Math.min(queue.scrollHeight, QUEUE_CAP);
+    stage.style.minHeight = `${Math.max(right.offsetHeight, wanted)}px`;
   }
 
   function buildQueue() {
@@ -81,7 +90,7 @@ if (root) {
       li.append(lab, gate);
       return li;
     }));
-    lockQueue(queue.offsetHeight);
+    lockQueue();
   }
 
   function moveNow(to: number, runTime: number) {
