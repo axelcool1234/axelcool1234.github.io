@@ -202,7 +202,7 @@ if (root) {
     });
     await laggedStart(made.map((g) => () => fadeIn(g, T(260))), T(40));
     if (loop.token !== mine) return;
-    ghostKey.style.visibility = "visible";
+    ghostKey.classList.add("is-on");
     await fadeIn(ghostKey, T(240));
   }
 
@@ -218,7 +218,7 @@ if (root) {
     verdict.style.opacity = "1";
     none.style.visibility = "";
     none.style.opacity = "1";
-    ghostKey.style.visibility = "hidden";
+    ghostKey.classList.remove("is-on");
     ghostKey.style.opacity = "1";
     setLoop(true);                            // nothing is eligible yet
   }

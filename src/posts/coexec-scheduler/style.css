@@ -849,16 +849,21 @@
 }
 .te-bar { z-index: 1; }
 
+/* Out of flow until the ghosts arrive, unlike .te-verdict and .bw-sub, which
+   reserve their boxes. Those two appear and vanish on every step, so a
+   reservation is the only way to stop the chart twitching. This one appears
+   exactly once, at the last step, and reserving it left an empty strip above
+   the controls for the whole run -- 47px of gap against 14px in the widget
+   without the mutation. The one-off shift when it arrives is the better trade. */
 .dr-ghostkey {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 0.45rem;
   margin: 0.8rem 0 0;
-  min-height: 1.2em;
   font-size: 0.82em;
   color: var(--on_surface_variant);
-  visibility: hidden;   /* kept in flow; see .te-verdict */
 }
+.dr-ghostkey.is-on { display: flex; }
 .dr-ghostswatch {
   flex: 0 0 auto;
   width: 1.1rem;
