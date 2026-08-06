@@ -48,10 +48,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  min-height: 2rem;
-  /* Same cap as the two run widgets below, so all three queues present the same
-     size box. This one holds six blocks and fits, but it behaves the same way
-     if it ever holds more. */
+  /* Fixed, not just capped: the same height as the two run widgets below, so
+     all three queues present the same box. It has to be a floor as well as a
+     ceiling because the column otherwise shrinks the instant a block leaves,
+     and the blocks reflowing upward were animating from below the new, shorter
+     edge and getting clipped by the overflow. The run widgets pin this from JS;
+     this queue is static markup, so it can be pure CSS. */
+  min-height: 12.2rem;
   max-height: 12.2rem;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -294,6 +297,7 @@
   .rq-blocks {
     flex-direction: row;
     min-width: 0;
+    min-height: 0;
     max-height: none;
     overflow-x: auto;
     overflow-y: hidden;
@@ -451,6 +455,9 @@
   bottom: 1.3rem;
   width: 0;
   border-left: 2px dashed var(--tertiary);
+  /* Above the bars. .te-bar carries z-index:1 so it sits over the ghosts, and
+     that also lifted it over this line, which used to win on DOM order alone. */
+  z-index: 2;
 }
 
 .te-now::after {
