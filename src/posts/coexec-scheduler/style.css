@@ -789,7 +789,11 @@
    where it never applies). Here it genuinely toggles. */
 .te-coda.is-active {
   opacity: 1;
-  border-left-color: var(--primary);
+  /* The same colour as the "now" line, which is the thing this box moves: while
+     it is live the clock is advancing. Deliberately not a green -- 17 of the 66
+     themes have no green to reach for, since --terminal_normal_green is warm in
+     the gruvbox and ayu families. */
+  border-left-color: var(--tertiary);
 }
 .te-coda.is-active pre code,
 .te-coda.is-active p { color: var(--on_surface); }
