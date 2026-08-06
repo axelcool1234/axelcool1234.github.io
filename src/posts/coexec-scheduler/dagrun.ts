@@ -238,7 +238,7 @@ if (root) {
       return lo === hi ? `W[${lo}]` : `W[${lo}-${hi}]`;
     };
     caption.innerHTML =
-      `The same ${FR.length} loads in the same order, now scheduled at ` +
+      `The same ${FR.length} loads, now scheduled at ` +
       `<strong>${rng(FR.map((f) => f.issue_on))}</strong> instead of ` +
       `<strong>${rng(FR.map((f) => f.issue_off))}</strong>.`;
     loop.reset();
