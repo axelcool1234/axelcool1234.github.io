@@ -9,7 +9,7 @@
 <h2>TLDR</h2>
 
 <p>
-We noticed that AMD's LLVM pre-RA scheduler, run on MI450, tends to bunch many <code>ds_load</code>s (LDS load instructions) at the head of a GEMM inner loop. Upon further inspection of the CoExecScheduler, it was determined that because the scheduler greedily schedules instructions every time one is available, there are moments where the only instructions available (and therefore scheduled) were <code>ds_load</code>s for data consumed much, much later.
+We noticed that AMD's LLVM pre-RA scheduler, run on MI450, tends to bunch many <code>ds_load</code>s (LDS load instructions) at the top of a GEMM's hot loop. Upon further inspection of the CoExecScheduler, it was determined that because the scheduler greedily schedules instructions every time one is available, there are moments where the only instructions available (and therefore scheduled) are <code>ds_load</code>s for data consumed much, much later.
 </p>
 
 <p>This does two bad things at once:</p>

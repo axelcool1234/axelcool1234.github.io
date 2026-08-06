@@ -49,6 +49,12 @@
   flex-direction: column;
   gap: 0.35rem;
   min-height: 2rem;
+  /* Same cap as the two run widgets below, so all three queues present the same
+     size box. This one holds six blocks and fits, but it behaves the same way
+     if it ever holds more. */
+  max-height: 12.2rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .rq-block {
@@ -282,7 +288,18 @@
   .rq-stage { flex-direction: column; }
   .rq-queue,
   .rq-held { width: 100%; }
-  .rq-blocks { flex-direction: row; flex-wrap: wrap; }
+  /* A sideways strip, like the run widgets, rather than a wrapped grid: a
+     queue that wraps onto a second row stops reading as an ordered queue. */
+  .rq-queue { min-width: 0; }
+  .rq-blocks {
+    flex-direction: row;
+    min-width: 0;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.25rem;
+  }
+  .rq-block { flex: 0 0 auto; }
   .rq-held { flex-direction: row; }
   .rq-held .rq-slot { flex: 1 1 0; }
 }
@@ -319,12 +336,10 @@
 }
 .te-kernels button[aria-pressed="true"] { border-color: var(--primary); background: var(--surface); }
 
-/* Many-fragment kernels: shrink the queue blocks so the column stays beside the
-   timeline instead of towering over it. The column keeps its 11rem -- widening
-   it to unwrap the note below squeezed the right side until the
-   while (Available.empty()) snippet lost its closing bracket. */
-.te.is-dense .te-blocks { gap: 0.16rem; }
-.te.is-dense .te-block { padding: 0.1rem 0.45rem; font-size: 0.72em; }
+/* Dense mode is gone: it shrank the blocks so a 25-fragment queue would not
+   tower over the timeline, which the scrollbar above now handles properly. The
+   class is still set on the figure in case something else wants it, but the
+   blocks are one size again so both kernels look alike. */
 
 .te-sub {
   margin: 0 0 0.9rem;
@@ -356,11 +371,11 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  /* f16 puts 25 blocks in here, which is taller than everything beside it.
-     Past this the column scrolls instead of growing. The JS clamps its own
-     min-height lock to the same value -- min-height beats max-height, so
+  /* Exactly the height the mxfp GEMM's seven blocks need, so both kernels
+     present the same size box and f16's 25 scroll inside it. The JS clamps its
+     own min-height lock to this value -- min-height beats max-height, so
      without that the cap would never engage. */
-  max-height: 21rem;
+  max-height: 12.2rem;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
