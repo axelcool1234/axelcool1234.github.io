@@ -956,6 +956,9 @@
    at full strength with a tinted row, so they stand out from the other loads
    and WMMAs rather than looking like more of the same. */
 .av-l.is-sub { color: var(--error); font-weight: 600; background: color-mix(in srgb, var(--error) 14%, transparent); }
+/* A picked wait takes the wait colour, not the load colour -- it is neither a
+   subload nor a consumer, and reusing the red made it read as one. */
+.av-l.is-waitsel { color: var(--tertiary); font-weight: 600; background: color-mix(in srgb, var(--tertiary) 14%, transparent); }
 .av-l.is-cons { color: var(--primary); font-weight: 600; background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .av-l.is-here { outline: 1px solid var(--outline); outline-offset: -1px; }
 

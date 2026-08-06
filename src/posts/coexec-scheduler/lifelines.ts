@@ -61,13 +61,21 @@ if (root) {
   let yMax = 1;
   const py = (v: number) => G.histBot - (v / yMax) * (G.histBot - G.histTop);
 
+  // The two pressure series are sampled once per scheduler pick, at different
+  // x positions, so there is no pointwise correspondence to interpolate. Both
+  // are resampled onto one per-WMMA grid at load, which gives arrays of equal
+  // length that lerp cleanly -- the same thing manim needs before it can morph
+  // two graphs. Taking the max within each WMMA preserves the peaks exactly,
+  // which is the number the figure exists to report.
+  let gridOff: number[] = [], gridOn: number[] = [];
   let heldR: SVGElement[] = [], useR: SVGElement[] = [], ghostR: SVGElement[] = [];
   let rowHit: SVGElement[] = [];
   let picked = -1;
   // "ranges" is the live-range/pressure pair; "stalls" is the LDS wait figure
   // over the same WMMA axis. Same data file, same assembly viewer underneath.
   let view: "ranges" | "stalls" = "ranges";
-  let curveOff: SVGElement, curveOn: SVGElement, fillOff: SVGElement, fillOn: SVGElement;
+  let curveGhost: SVGElement, curveLive: SVGElement;
+  let fillGhost: SVGElement, fillLive: SVGElement;
 
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -77,14 +85,14 @@ if (root) {
     if (view === "stalls") { buildStalls(); return; }
     drawYTicks(svg, G, { values: niceTicks(yMax), y: py });
 
-    // The two pressure curves are both always present: the inactive one stays
-    // as a faint ghost so the comparison never leaves the screen, which is the
-    // whole reason the figure has a toggle rather than two separate pictures.
-    fillOff = svgEl("path", { class: "lr-fill lr-off", d: pressPath(D!.off, true) });
-    fillOn = svgEl("path", { class: "lr-fill lr-on", d: pressPath(D!.on, true) });
-    curveOff = svgEl("path", { class: "lr-curve lr-off", d: pressPath(D!.off, false) });
-    curveOn = svgEl("path", { class: "lr-curve lr-on", d: pressPath(D!.on, false) });
-    svg.append(fillOff, fillOn, curveOff, curveOn);
+    // One curve that morphs, plus a static ghost of the mutation-off state --
+    // the same arrangement as the bars, where the bar moves and the ghost marks
+    // where it used to reach.
+    fillGhost = svgEl("path", { class: "lr-fill lr-ghostc", d: gridPath(gridOff, true) });
+    curveGhost = svgEl("path", { class: "lr-curve lr-ghostc", d: gridPath(gridOff, false) });
+    fillLive = svgEl("path", { class: "lr-fill lr-live", d: "" });
+    curveLive = svgEl("path", { class: "lr-curve lr-live", d: "" });
+    svg.append(fillGhost, fillLive, curveGhost, curveLive);
 
     heldR = []; useR = []; ghostR = []; rowHit = [];
     D!.off.bars.forEach((o, i) => {
@@ -165,8 +173,20 @@ if (root) {
     });
   }
 
-  const pressPath = (s: Side, close: boolean) =>
-    seriesPath(s.pressure.x, s.pressure.y, { x, y: py, baseY: close ? G.histBot : undefined });
+  // Highest pressure seen at each WMMA count, carried forward across WMMAs that
+  // no pick landed on.
+  function resample(s: Side): number[] {
+    const g = new Array<number>(NW).fill(0);
+    for (let i = 0; i < s.pressure.x.length; i++) {
+      const k = Math.min(NW - 1, Math.max(0, Math.round(s.pressure.x[i])));
+      g[k] = Math.max(g[k], s.pressure.y[i]);
+    }
+    for (let k = 1; k < NW; k++) if (g[k] === 0) g[k] = g[k - 1];
+    return g;
+  }
+
+  const gridPath = (g: number[], close: boolean) =>
+    seriesPath(g.map((_, i) => i), g, { x, y: py, baseY: close ? G.histBot : undefined });
 
   function render() {
     if (view === "stalls") {
@@ -195,16 +215,13 @@ if (root) {
       useR[i].setAttribute("x", String(x(cmin)));
       useR[i].setAttribute("width", String(Math.max(0, x(cmax) - x(cmin))));
     });
-    // Nothing is ghosted at mutation-off: there is no earlier state to show, and
-    // a second peak hanging under the curve there just read as noise. The off
-    // curve IS the ghost -- it fades back as the on curve comes up over it.
+    // Nothing is ghosted at mutation-off: there is no earlier state to show.
     ghostR.forEach((g) => g.setAttribute("opacity", String(0.3 * alpha)));
-    curveOff.setAttribute("opacity", String(lerp(1, 0.3, alpha)));
-    curveOff.setAttribute("stroke-width", String(lerp(1.6, 1.1, alpha)));
-    fillOff.setAttribute("opacity", String(lerp(0.2, 0.07, alpha)));
-    curveOn.setAttribute("opacity", String(alpha));
-    curveOn.setAttribute("stroke-width", "1.6");
-    fillOn.setAttribute("opacity", String(0.2 * alpha));
+    const live = gridOff.map((v, i) => lerp(v, gridOn[i], alpha));
+    curveLive.setAttribute("d", gridPath(live, false));
+    fillLive.setAttribute("d", gridPath(live, true));
+    curveGhost.setAttribute("opacity", String(0.3 * alpha));
+    fillGhost.setAttribute("opacity", String(0.07 * alpha));
   }
 
   // The listing shows whichever run the toggle is on, so a fragment stays
@@ -221,12 +238,15 @@ if (root) {
   function pickWait(line: number, stalled: number, wmma: number) {
     picked = -1;
     rowHit.forEach((r) => r.classList.remove("is-on"));
-    view_select({ lines: [line], consumers: [],
-                  label: `s_wait_dscnt after W[${wmma}] — stalls on ${stalled} DS op${stalled === 1 ? "" : "s"}` });
+    view_select({
+      lines: [line], consumers: [], kind: "wait",
+      label: `s_wait_dscnt after W[${wmma}] - stalls on ${stalled} DS op${stalled === 1 ? "" : "s"}`,
+    });
   }
 
-  const view_select = (t: { lines: number[]; consumers: number[]; label?: string } | null) =>
-    asm.select(t);
+  const view_select = (t: {
+    lines: number[]; consumers: number[]; label?: string; kind?: "load" | "wait";
+  } | null) => asm.select(t);
 
   async function setMutation(on: boolean, animate: boolean) {
     mutation = on;
@@ -265,6 +285,8 @@ if (root) {
     const rg = rowsIn(G, NF);
     ROW = rg.row; BAR_H = rg.barH; rowY = rg.y;
     yMax = Math.max(...d.off.pressure.y, ...d.on.pressure.y) * 1.08;
+    gridOff = resample(d.off);
+    gridOn = resample(d.on);
     build();
     picked = -1;
     void setMutation(mutation, false);

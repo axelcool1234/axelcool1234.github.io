@@ -29,6 +29,7 @@ export interface AsmTarget {
   lines: number[];        // the instructions this selection is about
   consumers: number[];    // WMMA indices that read it, for a load fragment
   label?: string;         // overrides the status line, for a wait stall
+  kind?: "load" | "wait"; // which colour the picked lines take
 }
 
 export class AsmView {
@@ -123,7 +124,7 @@ export class AsmView {
     for (let n = from; n <= to; n++) {
       const text = this.lines[n - 1] ?? "";
       const cls = ["av-l"];
-      if (sub.has(n)) cls.push("is-sub");
+      if (sub.has(n)) cls.push(this.target?.kind === "wait" ? "is-waitsel" : "is-sub");
       else if (cons.has(n)) cls.push("is-cons");
       else if (/^\s+ds_load/.test(text)) cls.push("is-ds");
       else if (/^\s+v_wmma/.test(text)) cls.push("is-wmma");
@@ -143,10 +144,10 @@ export class AsmView {
     this.o.toggle.textContent = this.whole ? "hot loop only" : "whole file";
     this.o.status.textContent = t
       ? t.label
-        ? `${t.label}${this.cursor >= 0 ? ` — at line ${this.jumps[this.cursor]}` : ""}`
+        ? `${t.label}${this.cursor >= 0 ? ` - at line ${this.jumps[this.cursor]}` : ""}`
         : `${t.lines.length} subload${t.lines.length === 1 ? "" : "s"}, `
         + `${t.consumers.length} consuming WMMA${t.consumers.length === 1 ? "" : "s"}`
-        + (this.cursor >= 0 ? ` — at line ${this.jumps[this.cursor]}` : "")
+        + (this.cursor >= 0 ? ` - at line ${this.jumps[this.cursor]}` : "")
       : `${s.file}, hot loop ${a}–${b}. Click a fragment above to trace it.`;
   }
 }
