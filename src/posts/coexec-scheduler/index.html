@@ -434,7 +434,7 @@ Based on the data, you can see that the (albeit minute amount of) kernels that h
     I ran a version of this DAG mutation that only kept the edges between an earlier WMMA &rarr; <code>ds_load</code> to ensure that the <code>ds_load</code>s are not scheduled too early and found that the results were very similar to what we see here. This indicates that many of the edges added are not entirely necessary because the CoExecScheduler handles them fine on its own. However, further testing on a wider corpus of kernels is needed to prove this with certainty. Note, setting the correct latency on the edge between a <code>ds_load</code> and its earliest WMMA consumer will need to be kept as well, as the CoExecScheduler provides a different latency than the default. So, if this DAG mutation is to be slimmed down, this would need to be kept as well.
     </li>
     <li>
-    Ultimately, the CoExecScheduler itself should be changed to have non-greedy register pressure awareness and the ability to reject all instructions in its available queue and schedule nothing instead.
+    Ultimately, the CoExecScheduler itself should be changed to have non-greedy register pressure awareness and the ability to reject all instructions in its available queue and schedule nothing instead. This would make the DAG mutation obselete, except for the aforementioned correction of the latency on edges between <code>ds_load</code>s and their earliest consuming WMMAs.
     </li>
 </ul>
 </p>
