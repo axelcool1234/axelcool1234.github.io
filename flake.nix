@@ -76,6 +76,14 @@
               ))
               # Figures for the CoExec deck, rendered from source at build time
               (import ./generators/coexec-figures.nix { inherit pkgs; })
+              # The four assembly listings the live-range widget reads. Kept in
+              # src/figures/coexec/asm so the extractor that maps fragments onto
+              # their lines sits beside them, and copied here rather than
+              # duplicated into the post directory.
+              (pkgs.runCommand "coexec-asm" { } ''
+                mkdir -p "$out/posts/coexec-scheduler/asm"
+                cp ${./src/figures/coexec/asm}/*.s "$out/posts/coexec-scheduler/asm/"
+              '')
               (pkgs.writeTextDir ".nojekyll" "")
               # All 66 themes in ONE derivation. They used to be one writeTextDir
               # each, and writeTextDir sets allowSubstitutes = false: Nix rebuilds

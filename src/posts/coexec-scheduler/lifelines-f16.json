@@ -1,4 +1,280 @@
 {
+  "asm": {
+    "off": {
+      "file": "f16-NOMUT.s",
+      "loop": [
+        533,
+        1270
+      ],
+      "wmma": [
+        542,
+        563,
+        588,
+        595,
+        606,
+        619,
+        641,
+        662,
+        684,
+        704,
+        724,
+        746,
+        771,
+        789,
+        805,
+        822,
+        842,
+        861,
+        877,
+        896,
+        898,
+        907,
+        915,
+        926,
+        938,
+        947,
+        955,
+        965,
+        975,
+        983,
+        993,
+        1004,
+        1014,
+        1023,
+        1034,
+        1044,
+        1052,
+        1062,
+        1071,
+        1072,
+        1073,
+        1074,
+        1075,
+        1076,
+        1078,
+        1084,
+        1085,
+        1086,
+        1087,
+        1091,
+        1097,
+        1111,
+        1117,
+        1118,
+        1119,
+        1120,
+        1121,
+        1134,
+        1149,
+        1161,
+        1162,
+        1163,
+        1164,
+        1165,
+        1167,
+        1181,
+        1189,
+        1191,
+        1193,
+        1194,
+        1195,
+        1197,
+        1199,
+        1200,
+        1201,
+        1203,
+        1205,
+        1206,
+        1207,
+        1209,
+        1211,
+        1212,
+        1213,
+        1215,
+        1217,
+        1218,
+        1219,
+        1221,
+        1223,
+        1224,
+        1225,
+        1227,
+        1229,
+        1230,
+        1231,
+        1233,
+        1236,
+        1237,
+        1238,
+        1239,
+        1240,
+        1241,
+        1242,
+        1243,
+        1244,
+        1245,
+        1246,
+        1247,
+        1248,
+        1249,
+        1250,
+        1251,
+        1252,
+        1253,
+        1254,
+        1255,
+        1256,
+        1257,
+        1258,
+        1259,
+        1260,
+        1261,
+        1262,
+        1263,
+        1264,
+        1265,
+        1266,
+        1267
+      ]
+    },
+    "on": {
+      "file": "f16-MUT.s",
+      "loop": [
+        533,
+        1257
+      ],
+      "wmma": [
+        542,
+        563,
+        582,
+        589,
+        600,
+        613,
+        634,
+        649,
+        670,
+        690,
+        710,
+        734,
+        759,
+        776,
+        789,
+        803,
+        819,
+        835,
+        845,
+        846,
+        848,
+        849,
+        850,
+        851,
+        853,
+        854,
+        855,
+        856,
+        858,
+        859,
+        860,
+        861,
+        864,
+        866,
+        868,
+        870,
+        872,
+        881,
+        882,
+        883,
+        885,
+        894,
+        895,
+        896,
+        898,
+        907,
+        908,
+        909,
+        911,
+        920,
+        921,
+        922,
+        924,
+        933,
+        934,
+        935,
+        937,
+        946,
+        947,
+        948,
+        950,
+        959,
+        968,
+        977,
+        987,
+        999,
+        1001,
+        1003,
+        1005,
+        1014,
+        1015,
+        1016,
+        1018,
+        1027,
+        1028,
+        1029,
+        1031,
+        1040,
+        1041,
+        1042,
+        1044,
+        1053,
+        1054,
+        1055,
+        1057,
+        1066,
+        1067,
+        1068,
+        1070,
+        1079,
+        1080,
+        1081,
+        1083,
+        1092,
+        1101,
+        1110,
+        1120,
+        1132,
+        1134,
+        1136,
+        1138,
+        1147,
+        1148,
+        1149,
+        1151,
+        1152,
+        1153,
+        1154,
+        1160,
+        1161,
+        1162,
+        1163,
+        1167,
+        1173,
+        1187,
+        1193,
+        1194,
+        1195,
+        1196,
+        1197,
+        1210,
+        1225,
+        1237,
+        1238,
+        1239,
+        1240,
+        1241,
+        1242
+      ]
+    }
+  },
   "budget": 88,
   "kernel": "f16_bm256_bk256",
   "off": {
@@ -7,252 +283,660 @@
         "clamped": false,
         "cmax": 35,
         "cmin": 32,
+        "consumers": [
+          32,
+          33,
+          34,
+          35
+        ],
         "issued": 6,
+        "lines": [
+          628,
+          629
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 60,
         "cmin": 32,
+        "consumers": [
+          32,
+          36,
+          40,
+          44,
+          48,
+          52,
+          56,
+          60
+        ],
         "issued": 8,
+        "lines": [
+          671,
+          672
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 61,
         "cmin": 33,
+        "consumers": [
+          33,
+          37,
+          41,
+          45,
+          49,
+          53,
+          57,
+          61
+        ],
         "issued": 8,
+        "lines": [
+          679,
+          692
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 62,
         "cmin": 34,
+        "consumers": [
+          34,
+          38,
+          42,
+          46,
+          50,
+          54,
+          58,
+          62
+        ],
         "issued": 9,
+        "lines": [
+          693,
+          700
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 63,
         "cmin": 35,
+        "consumers": [
+          35,
+          39,
+          43,
+          47,
+          51,
+          55,
+          59,
+          63
+        ],
         "issued": 10,
+        "lines": [
+          712,
+          713
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 39,
         "cmin": 36,
+        "consumers": [
+          36,
+          37,
+          38,
+          39
+        ],
         "issued": 6,
+        "lines": [
+          637,
+          649
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 43,
         "cmin": 40,
+        "consumers": [
+          40,
+          41,
+          42,
+          43
+        ],
         "issued": 7,
+        "lines": [
+          650,
+          658
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 47,
         "cmin": 44,
+        "consumers": [
+          44,
+          45,
+          46,
+          47
+        ],
         "issued": 10,
+        "lines": [
+          720,
+          732
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 51,
         "cmin": 48,
+        "consumers": [
+          48,
+          49,
+          50,
+          51
+        ],
         "issued": 13,
+        "lines": [
+          785,
+          793
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 55,
         "cmin": 52,
+        "consumers": [
+          52,
+          53,
+          54,
+          55
+        ],
         "issued": 14,
+        "lines": [
+          801,
+          816
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 59,
         "cmin": 56,
+        "consumers": [
+          56,
+          57,
+          58,
+          59
+        ],
         "issued": 15,
+        "lines": [
+          817,
+          818
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 63,
         "cmin": 60,
+        "consumers": [
+          60,
+          61,
+          62,
+          63
+        ],
         "issued": 16,
+        "lines": [
+          826,
+          832
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 67,
         "cmin": 64,
+        "consumers": [
+          64,
+          65,
+          66,
+          67
+        ],
         "issued": 16,
+        "lines": [
+          836,
+          837
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 92,
         "cmin": 64,
+        "consumers": [
+          64,
+          68,
+          72,
+          76,
+          80,
+          84,
+          88,
+          92
+        ],
         "issued": 24,
+        "lines": [
+          932,
+          933
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 93,
         "cmin": 65,
+        "consumers": [
+          65,
+          69,
+          73,
+          77,
+          81,
+          85,
+          89,
+          93
+        ],
         "issued": 25,
+        "lines": [
+          942,
+          943
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 94,
         "cmin": 66,
+        "consumers": [
+          66,
+          70,
+          74,
+          78,
+          82,
+          86,
+          90,
+          94
+        ],
         "issued": 26,
+        "lines": [
+          951,
+          959
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 95,
         "cmin": 67,
+        "consumers": [
+          67,
+          71,
+          75,
+          79,
+          83,
+          87,
+          91,
+          95
+        ],
         "issued": 27,
+        "lines": [
+          960,
+          961
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 71,
         "cmin": 68,
+        "consumers": [
+          68,
+          69,
+          70,
+          71
+        ],
         "issued": 17,
+        "lines": [
+          850,
+          857
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 75,
         "cmin": 72,
+        "consumers": [
+          72,
+          73,
+          74,
+          75
+        ],
         "issued": 18,
+        "lines": [
+          869,
+          885
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 79,
         "cmin": 76,
+        "consumers": [
+          76,
+          77,
+          78,
+          79
+        ],
         "issued": 19,
+        "lines": [
+          886,
+          892
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 83,
         "cmin": 80,
+        "consumers": [
+          80,
+          81,
+          82,
+          83
+        ],
         "issued": 21,
+        "lines": [
+          902,
+          903
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 87,
         "cmin": 84,
+        "consumers": [
+          84,
+          85,
+          86,
+          87
+        ],
         "issued": 22,
+        "lines": [
+          911,
+          919
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 91,
         "cmin": 88,
+        "consumers": [
+          88,
+          89,
+          90,
+          91
+        ],
         "issued": 23,
+        "lines": [
+          920,
+          921
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 95,
         "cmin": 92,
+        "consumers": [
+          92,
+          93,
+          94,
+          95
+        ],
         "issued": 23,
+        "lines": [
+          922,
+          930
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 99,
         "cmin": 96,
+        "consumers": [
+          96,
+          97,
+          98,
+          99
+        ],
         "issued": 28,
+        "lines": [
+          969,
+          970
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 124,
         "cmin": 96,
+        "consumers": [
+          96,
+          100,
+          104,
+          108,
+          112,
+          116,
+          120,
+          124
+        ],
         "issued": 35,
+        "lines": [
+          1038,
+          1039
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 125,
         "cmin": 97,
+        "consumers": [
+          97,
+          101,
+          105,
+          109,
+          113,
+          117,
+          121,
+          125
+        ],
         "issued": 36,
+        "lines": [
+          1048,
+          1056
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 126,
         "cmin": 98,
+        "consumers": [
+          98,
+          102,
+          106,
+          110,
+          114,
+          118,
+          122,
+          126
+        ],
         "issued": 37,
+        "lines": [
+          1057,
+          1058
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 127,
         "cmin": 99,
+        "consumers": [
+          99,
+          103,
+          107,
+          111,
+          115,
+          119,
+          123,
+          127
+        ],
         "issued": 38,
+        "lines": [
+          1066,
+          1067
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 103,
         "cmin": 100,
+        "consumers": [
+          100,
+          101,
+          102,
+          103
+        ],
         "issued": 29,
+        "lines": [
+          979,
+          987
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 107,
         "cmin": 104,
+        "consumers": [
+          104,
+          105,
+          106,
+          107
+        ],
         "issued": 30,
+        "lines": [
+          988,
+          989
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 111,
         "cmin": 108,
+        "consumers": [
+          108,
+          109,
+          110,
+          111
+        ],
         "issued": 31,
+        "lines": [
+          997,
+          998
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 115,
         "cmin": 112,
+        "consumers": [
+          112,
+          113,
+          114,
+          115
+        ],
         "issued": 31,
+        "lines": [
+          999,
+          1000
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 119,
         "cmin": 116,
+        "consumers": [
+          116,
+          117,
+          118,
+          119
+        ],
         "issued": 32,
+        "lines": [
+          1008,
+          1009
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 123,
         "cmin": 120,
+        "consumers": [
+          120,
+          121,
+          122,
+          123
+        ],
         "issued": 33,
+        "lines": [
+          1018,
+          1027
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 127,
         "cmin": 124,
+        "consumers": [
+          124,
+          125,
+          126,
+          127
+        ],
         "issued": 34,
+        "lines": [
+          1028,
+          1029
+        ],
         "vgprs": 8
       }
     ],
@@ -901,252 +1585,660 @@
         "clamped": false,
         "cmax": 35,
         "cmin": 32,
+        "consumers": [
+          32,
+          33,
+          34,
+          35
+        ],
         "issued": 6,
+        "lines": [
+          622,
+          623
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 60,
         "cmin": 32,
+        "consumers": [
+          32,
+          36,
+          40,
+          44,
+          48,
+          52,
+          56,
+          60
+        ],
         "issued": 8,
+        "lines": [
+          657,
+          658
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 61,
         "cmin": 33,
+        "consumers": [
+          33,
+          37,
+          41,
+          45,
+          49,
+          53,
+          57,
+          61
+        ],
         "issued": 8,
+        "lines": [
+          665,
+          678
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 62,
         "cmin": 34,
+        "consumers": [
+          34,
+          38,
+          42,
+          46,
+          50,
+          54,
+          58,
+          62
+        ],
         "issued": 9,
+        "lines": [
+          679,
+          686
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 63,
         "cmin": 35,
+        "consumers": [
+          35,
+          39,
+          43,
+          47,
+          51,
+          55,
+          59,
+          63
+        ],
         "issued": 10,
+        "lines": [
+          698,
+          699
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 39,
         "cmin": 36,
+        "consumers": [
+          36,
+          37,
+          38,
+          39
+        ],
         "issued": 10,
+        "lines": [
+          706,
+          720
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 43,
         "cmin": 40,
+        "consumers": [
+          40,
+          41,
+          42,
+          43
+        ],
         "issued": 11,
+        "lines": [
+          721,
+          730
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 47,
         "cmin": 44,
+        "consumers": [
+          44,
+          45,
+          46,
+          47
+        ],
         "issued": 12,
+        "lines": [
+          744,
+          745
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 51,
         "cmin": 48,
+        "consumers": [
+          48,
+          49,
+          50,
+          51
+        ],
         "issued": 13,
+        "lines": [
+          772,
+          780
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 55,
         "cmin": 52,
+        "consumers": [
+          52,
+          53,
+          54,
+          55
+        ],
         "issued": 15,
+        "lines": [
+          799,
+          807
+        ],
         "vgprs": 8
       },
       {
         "clamped": false,
         "cmax": 59,
         "cmin": 56,
+        "consumers": [
+          56,
+          57,
+          58,
+          59
+        ],
         "issued": 16,
+        "lines": [
+          808,
+          827
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 63,
         "cmin": 60,
+        "consumers": [
+          60,
+          61,
+          62,
+          63
+        ],
         "issued": 37,
+        "lines": [
+          876,
+          877
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 67,
         "cmin": 64,
+        "consumers": [
+          64,
+          65,
+          66,
+          67
+        ],
         "issued": 41,
+        "lines": [
+          889,
+          890
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 92,
         "cmin": 64,
+        "consumers": [
+          64,
+          68,
+          72,
+          76,
+          80,
+          84,
+          88,
+          92
+        ],
         "issued": 45,
+        "lines": [
+          902,
+          903
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 93,
         "cmin": 65,
+        "consumers": [
+          65,
+          69,
+          73,
+          77,
+          81,
+          85,
+          89,
+          93
+        ],
         "issued": 49,
+        "lines": [
+          915,
+          916
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 94,
         "cmin": 66,
+        "consumers": [
+          66,
+          70,
+          74,
+          78,
+          82,
+          86,
+          90,
+          94
+        ],
         "issued": 53,
+        "lines": [
+          928,
+          929
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 95,
         "cmin": 67,
+        "consumers": [
+          67,
+          71,
+          75,
+          79,
+          83,
+          87,
+          91,
+          95
+        ],
         "issued": 57,
+        "lines": [
+          941,
+          942
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 71,
         "cmin": 68,
+        "consumers": [
+          68,
+          69,
+          70,
+          71
+        ],
         "issued": 61,
+        "lines": [
+          954,
+          955
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 75,
         "cmin": 72,
+        "consumers": [
+          72,
+          73,
+          74,
+          75
+        ],
         "issued": 62,
+        "lines": [
+          963,
+          964
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 79,
         "cmin": 76,
+        "consumers": [
+          76,
+          77,
+          78,
+          79
+        ],
         "issued": 63,
+        "lines": [
+          972,
+          973
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 83,
         "cmin": 80,
+        "consumers": [
+          80,
+          81,
+          82,
+          83
+        ],
         "issued": 64,
+        "lines": [
+          981,
+          982
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 87,
         "cmin": 84,
+        "consumers": [
+          84,
+          85,
+          86,
+          87
+        ],
         "issued": 65,
+        "lines": [
+          991,
+          992
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 91,
         "cmin": 88,
+        "consumers": [
+          88,
+          89,
+          90,
+          91
+        ],
         "issued": 65,
+        "lines": [
+          993,
+          994
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 95,
         "cmin": 92,
+        "consumers": [
+          92,
+          93,
+          94,
+          95
+        ],
         "issued": 69,
+        "lines": [
+          1009,
+          1010
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 99,
         "cmin": 96,
+        "consumers": [
+          96,
+          97,
+          98,
+          99
+        ],
         "issued": 73,
+        "lines": [
+          1022,
+          1023
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 124,
         "cmin": 96,
+        "consumers": [
+          96,
+          100,
+          104,
+          108,
+          112,
+          116,
+          120,
+          124
+        ],
         "issued": 77,
+        "lines": [
+          1035,
+          1036
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 125,
         "cmin": 97,
+        "consumers": [
+          97,
+          101,
+          105,
+          109,
+          113,
+          117,
+          121,
+          125
+        ],
         "issued": 81,
+        "lines": [
+          1048,
+          1049
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 126,
         "cmin": 98,
+        "consumers": [
+          98,
+          102,
+          106,
+          110,
+          114,
+          118,
+          122,
+          126
+        ],
         "issued": 85,
+        "lines": [
+          1061,
+          1062
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 127,
         "cmin": 99,
+        "consumers": [
+          99,
+          103,
+          107,
+          111,
+          115,
+          119,
+          123,
+          127
+        ],
         "issued": 89,
+        "lines": [
+          1074,
+          1075
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 103,
         "cmin": 100,
+        "consumers": [
+          100,
+          101,
+          102,
+          103
+        ],
         "issued": 93,
+        "lines": [
+          1087,
+          1088
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 107,
         "cmin": 104,
+        "consumers": [
+          104,
+          105,
+          106,
+          107
+        ],
         "issued": 94,
+        "lines": [
+          1096,
+          1097
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 111,
         "cmin": 108,
+        "consumers": [
+          108,
+          109,
+          110,
+          111
+        ],
         "issued": 95,
+        "lines": [
+          1105,
+          1106
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 115,
         "cmin": 112,
+        "consumers": [
+          112,
+          113,
+          114,
+          115
+        ],
         "issued": 96,
+        "lines": [
+          1114,
+          1115
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 119,
         "cmin": 116,
+        "consumers": [
+          116,
+          117,
+          118,
+          119
+        ],
         "issued": 97,
+        "lines": [
+          1124,
+          1125
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 123,
         "cmin": 120,
+        "consumers": [
+          120,
+          121,
+          122,
+          123
+        ],
         "issued": 97,
+        "lines": [
+          1126,
+          1127
+        ],
         "vgprs": 8
       },
       {
         "clamped": true,
         "cmax": 127,
         "cmin": 124,
+        "consumers": [
+          124,
+          125,
+          126,
+          127
+        ],
         "issued": 101,
+        "lines": [
+          1142,
+          1143
+        ],
         "vgprs": 8
       }
     ],

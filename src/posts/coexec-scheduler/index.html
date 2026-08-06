@@ -361,7 +361,7 @@ With these added edges forming a window for every <code>ds_load</code> fragment,
 <h3>Live range reduction</h3>
 
 <p>
-The following chart shows how the DAG mutation affects the live ranges (and consequently, the VGPR usage) of the <code>ds_load</code> fragments.↴
+The following chart shows how the DAG mutation affects the live ranges (and consequently, the VGPR usage) of the <code>ds_load</code> fragments.
 </p>
 
 <figure class="lr" id="lr">
@@ -382,8 +382,19 @@ The following chart shows how the DAG mutation affects the live ranges (and cons
   <ul class="lr-legend">
     <li><span class="lr-key lr-kheld"></span>held live but not yet read</li>
     <li><span class="lr-key lr-kinuse"></span>in use (first to last consumer)</li>
-    <li><span class="lr-key lr-kclamp"></span>in use, gained a WMMA &rarr; <code>ds_load</code> edge</li>
+    <li><span class="lr-key lr-kclamp"></span>in use, gained a WMMA &rarr; ds_load edge</li>
     <li><span class="lr-key lr-kghost"></span>held live without the mutation</li>
   </ul>
+
+  <details class="av">
+    <summary>Show the assembly</summary>
+    <div class="av-bar">
+      <button type="button" data-av="prev" aria-label="Previous instruction">&larr;</button>
+      <button type="button" data-av="next" aria-label="Next instruction">&rarr;</button>
+      <button type="button" data-av="scope">whole file</button>
+      <span class="av-status"></span>
+    </div>
+    <pre class="av-code" tabindex="0"></pre>
+  </details>
 
 </figure>

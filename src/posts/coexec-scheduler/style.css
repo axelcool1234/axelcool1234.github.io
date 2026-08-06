@@ -887,3 +887,68 @@
 .lr-kclamp { background: var(--primary); }
 .lr-kghost { background: var(--error); opacity: 0.3; }
 
+
+/* --- the assembly listing ------------------------------------------------ */
+/* Opens on the hot loop -- ~740 lines of the 2200-3400 in the file -- which is
+ * both the part that matters and small enough not to need virtualising. The
+ * instruction classes take the same two colours the charts use, so a red line
+ * here is the same thing as a red bar up there. */
+
+.av { margin-top: 0.9rem; border-top: 1px solid var(--outline); padding-top: 0.7rem; }
+.av summary { font-size: 0.85em; cursor: pointer; color: var(--on_surface_variant); }
+.av summary:hover { color: var(--on_surface); }
+
+.av-bar { display: flex; align-items: center; gap: 0.4rem; margin: 0.7rem 0 0.5rem; }
+.av-bar button {
+  font: inherit;
+  font-size: 0.8em;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--on_surface);
+  cursor: pointer;
+}
+.av-bar button:hover:not(:disabled) { border-color: var(--primary); }
+.av-bar button:disabled { opacity: 0.4; cursor: default; }
+.av-status { font-size: 0.78em; color: var(--on_surface_variant); }
+
+.av-code {
+  margin: 0;
+  position: relative;
+  max-height: 26rem;
+  overflow: auto;
+  padding: 0.5rem 0;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 0.72em;
+  line-height: 1.45;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.av-l { display: block; padding: 0 0.6rem; color: var(--on_surface_variant); }
+/* Line numbers, dimmed and unselectable so copying the pane copies code. */
+.av-l i {
+  display: inline-block;
+  width: 3.2em;
+  margin-right: 0.7em;
+  text-align: right;
+  font-style: normal;
+  opacity: 0.4;
+  user-select: none;
+}
+.av-l.is-outside { opacity: 0.5; }
+.av-l.is-ds { color: var(--error); }
+.av-l.is-wmma { color: var(--primary); }
+
+/* The selected fragment and the WMMAs that read it, in the same two colours but
+   at full strength with a tinted row, so they stand out from the other loads
+   and WMMAs rather than looking like more of the same. */
+.av-l.is-sub { color: var(--error); font-weight: 600; background: color-mix(in srgb, var(--error) 14%, transparent); }
+.av-l.is-cons { color: var(--primary); font-weight: 600; background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.av-l.is-here { outline: 1px solid var(--outline); outline-offset: -1px; }
+
+.lr-rowhit { fill: transparent; cursor: pointer; }
+.lr-rowhit.is-on { fill: var(--on_surface); opacity: 0.07; }

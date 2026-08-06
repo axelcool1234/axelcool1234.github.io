@@ -17,6 +17,7 @@
 import { play, smooth } from "./anim.js";
 import { Geom, svgEl, xScaleFor, rowsIn, drawXAxis, drawYLabel, drawYTicks,
          drawRowTicks, niceTicks, seriesPath } from "./chart.js";
+import { AsmView, AsmSide } from "./asmview.js";
 
 interface Bar {
   issued: number;    // WMMA index its first subload was issued at
@@ -24,10 +25,15 @@ interface Bar {
   cmax: number;      // last consumer
   vgprs: number;
   clamped: boolean;  // does the mutation constrain this one?
+  lines: number[];      // its subloads, as assembly line numbers
+  consumers: number[];  // the WMMAs that actually read it, as indices
 }
 
 interface Side { bars: Bar[]; pressure: { x: number[]; y: number[] } }
-interface Data { kernel: string; budget: number; off: Side; on: Side }
+interface Data {
+  kernel: string; budget: number; off: Side; on: Side;
+  asm: { off: AsmSide; on: AsmSide };
+}
 
 const G: Geom = {
   vbW: 680, vbH: 362,
@@ -56,6 +62,8 @@ if (root) {
   const py = (v: number) => G.histBot - (v / yMax) * (G.histBot - G.histTop);
 
   let heldR: SVGElement[] = [], useR: SVGElement[] = [], ghostR: SVGElement[] = [];
+  let rowHit: SVGElement[] = [];
+  let picked = -1;
   let curveOff: SVGElement, curveOn: SVGElement, fillOff: SVGElement, fillOn: SVGElement;
 
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -74,7 +82,7 @@ if (root) {
     curveOn = svgEl("path", { class: "lr-curve lr-on", d: pressPath(D!.on, false) });
     svg.append(fillOff, fillOn, curveOff, curveOn);
 
-    heldR = []; useR = []; ghostR = [];
+    heldR = []; useR = []; ghostR = []; rowHit = [];
     D!.off.bars.forEach((o, i) => {
       // What the bar gives up. The consumers never move between the two runs
       // (checked: cmin and cmax are identical for every fragment in both
@@ -91,8 +99,17 @@ if (root) {
         class: `lr-use${D!.on.bars[i].clamped ? " is-clamped" : ""}`,
         y: rowY(i), height: BAR_H, x: 0, width: 0,
       });
-      svg.append(held, use);
-      heldR.push(held); useR.push(use);
+      const hit = svgEl("rect", {
+        class: "lr-rowhit", x: G.x0, y: rowY(i) - (ROW - BAR_H) / 2,
+        width: G.x1 - G.x0, height: ROW,
+      });
+      hit.addEventListener("pointerdown", (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        pick(picked === i ? -1 : i);
+      });
+      svg.append(held, use, hit);
+      heldR.push(held); useR.push(use); rowHit.push(hit);
     });
 
     drawRowTicks(svg, G, { n: NF, y: rowY, barH: BAR_H, row: ROW });
@@ -131,9 +148,21 @@ if (root) {
     fillOn.setAttribute("opacity", String(0.2 * alpha));
   }
 
+  // The listing shows whichever run the toggle is on, so a fragment stays
+  // selected across the switch and you see the same load in both schedules.
+  function pick(i: number) {
+    picked = i;
+    rowHit.forEach((r, k) => r.classList.toggle("is-on", k === i));
+    const side = mutation ? D!.on : D!.off;
+    view.select(i === -1 ? null : {
+      lines: side.bars[i].lines, consumers: side.bars[i].consumers,
+    });
+  }
+
   async function setMutation(on: boolean, animate: boolean) {
     mutation = on;
     dagBtns.forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.dag === "on") === on)));
+    void view.show(on ? D!.asm.on : D!.asm.off).then(() => pick(picked));
     const from = alpha, to = on ? 1 : 0;
     if (!animate || from === to) { alpha = to; render(); return; }
     await play((a) => { alpha = lerp(from, to, a); render(); }, 620, smooth);
@@ -168,6 +197,7 @@ if (root) {
     ROW = rg.row; BAR_H = rg.barH; rowY = rg.y;
     yMax = Math.max(...d.off.pressure.y, ...d.on.pressure.y) * 1.08;
     build();
+    picked = -1;
     void setMutation(mutation, false);
   }
 
@@ -176,6 +206,15 @@ if (root) {
       if (b.getAttribute("aria-pressed") === "true") return;
       void loadKernel(b.dataset.kernel!);
     }));
+
+  const view = new AsmView({
+    root,
+    code: q<HTMLElement>(".av-code"),
+    status: q<HTMLElement>(".av-status"),
+    prev: q<HTMLButtonElement>('[data-av="prev"]'),
+    next: q<HTMLButtonElement>('[data-av="next"]'),
+    toggle: q<HTMLButtonElement>('[data-av="scope"]'),
+  });
 
   void loadKernel("mxfp");
 }
