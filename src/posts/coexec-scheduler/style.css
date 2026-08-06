@@ -955,21 +955,26 @@
   user-select: none;
 }
 .av-l.is-outside { opacity: 0.5; }
-.av-l.is-ds { color: var(--error); }
+/* One colour per instruction class, matching the widgets above: a ds_load is
+   --secondary wherever it appears, a WMMA --primary, a wait --tertiary. Red is
+   reserved for spill code, which appears nowhere else. */
+.av-l.is-ds { color: var(--secondary); }
 .av-l.is-wmma { color: var(--primary); }
 .av-l.is-wait { color: var(--tertiary); }
+.av-l.is-scratch { color: var(--error); }
 
 /* The selected fragment and the WMMAs that read it, in the same two colours but
    at full strength with a tinted row, so they stand out from the other loads
    and WMMAs rather than looking like more of the same. */
-.av-l.is-sub { color: var(--error); font-weight: 600; background: color-mix(in srgb, var(--error) 14%, transparent); }
+.av-l.is-sub { color: var(--secondary); font-weight: 600; background: color-mix(in srgb, var(--secondary) 14%, transparent); }
 /* A picked wait takes the wait colour, not the load colour -- it is neither a
    subload nor a consumer, and reusing the red made it read as one. */
 .av-l.is-waitsel { color: var(--tertiary); font-weight: 600; background: color-mix(in srgb, var(--tertiary) 14%, transparent); }
 /* The DS ops a selected wait is actually waiting on. Load-coloured, because
    that is what they are, but lighter than a picked fragment so the wait itself
-   stays the focus. */
-.av-l.is-op { color: var(--error); background: color-mix(in srgb, var(--error) 7%, transparent); }
+   stays the focus. Selection is the same colour bolded, not a different one --
+   otherwise a picked load and the spill code would both be red. */
+.av-l.is-op { color: var(--secondary); background: color-mix(in srgb, var(--secondary) 7%, transparent); }
 .av-l.is-cons { color: var(--primary); font-weight: 600; background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .av-l.is-here { outline: 1px solid var(--outline); outline-offset: -1px; }
 /* Only the instructions that map back to something on the chart invite a
@@ -979,3 +984,59 @@
 
 .lr-rowhit { fill: transparent; cursor: pointer; }
 .lr-rowhit.is-on { fill: var(--on_surface); opacity: 0.07; }
+
+
+/* --- results ------------------------------------------------------------- */
+/* One chart, four buttons. The metrics span 718,570 down to 2.45, so they get
+ * one axis at a time rather than four panels inviting a comparison between
+ * quantities that have nothing to do with each other. */
+
+.rs {
+  margin: 1.5rem 0;
+  padding: 0.9rem;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface_variant);
+}
+
+.rs-svg { width: 100%; height: auto; display: block; }
+
+.rs-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.7rem; }
+.rs-tabs button {
+  font: inherit;
+  font-size: 0.82em;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: none;
+  color: var(--on_surface);
+  cursor: pointer;
+}
+.rs-tabs button[aria-pressed="true"] { border-color: var(--primary); background: var(--surface); }
+
+.rs-bar.rs-off { fill: var(--error); }
+.rs-bar.rs-on { fill: var(--primary); }
+.rs-axis { stroke: var(--outline); stroke-width: 1; }
+.rs-value { font-family: monospace; font-size: 11px; fill: var(--on_surface); }
+.rs-kernel { font-family: monospace; font-size: 10px; fill: var(--on_surface_variant); }
+
+.rs-caption {
+  margin: 0.6rem 0 0;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  color: var(--on_surface);
+}
+
+.rs-legend {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8em;
+  color: var(--on_surface_variant);
+}
+.rs-legend li { display: flex; align-items: center; gap: 0.45rem; }
+.rs-key { flex: 0 0 auto; width: 1.1rem; height: 0.55rem; border-radius: 2px; }
+.rs-koff { background: var(--error); }
+.rs-kon { background: var(--primary); }

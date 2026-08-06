@@ -27,5 +27,9 @@
       src = "./lifelines.ts";
       module = true;
     }
+    {
+      src = "./results.ts";
+      module = true;
+    }
   ];
 }

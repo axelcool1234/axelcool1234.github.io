@@ -1,0 +1,50 @@
+{
+  "kernels": [
+    "mxfp_gemm canonical_32t",
+    "f16 bm256_bk256"
+  ],
+  "panels": [
+    {
+      "caption": "10.7x fewer  /  1.08x fewer",
+      "fmt": "{:,.0f}",
+      "off": [
+        718570,
+        30738
+      ],
+      "on": [
+        66876,
+        28497
+      ],
+      "scale": "log",
+      "title": "Dispatch cycles"
+    },
+    {
+      "caption": "2.5 -> 40.1  /  77.8 -> 86.2",
+      "fmt": "{:.1f}%",
+      "off": [
+        2.45,
+        77.78
+      ],
+      "on": [
+        40.06,
+        86.16
+      ],
+      "scale": "lin",
+      "title": "XDL steady efficiency (all CU)"
+    },
+    {
+      "caption": "805 -> 16  /  none either way",
+      "fmt": "{:.0f}",
+      "off": [
+        805,
+        0
+      ],
+      "on": [
+        16,
+        0
+      ],
+      "scale": "lin",
+      "title": "VGPR spill count"
+    }
+  ]
+}

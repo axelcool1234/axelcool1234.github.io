@@ -361,7 +361,7 @@ With these added edges forming a window for every <code>ds_load</code> fragment,
 <h3>Live range reduction and spreading out waits</h3>
 
 <p>
-The following chart shows how the DAG mutation affects the live ranges (and consequently, the VGPR usage) of the <code>ds_load</code> fragments, as well as the <code>s_wait_dscnt</code>s. As shown, the live ranges are significantly reduced and the waits are spread out, allowing for better latency hiding! Click any of the load fragments or the waits to see where it is in the assembly code.
+The following chart shows how the DAG mutation affects the live ranges (and consequently, the VGPR usage) of the <code>ds_load</code> fragments, as well as how it affects the <code>s_wait_dscnt</code>s. As shown, the live ranges are significantly reduced and the waits are spread out, which allows for better latency hiding! Click any of the load fragments or the waits to see where it is in the assembly code.
 </p>
 
 <figure class="lr" id="lr">
@@ -401,4 +401,21 @@ The following chart shows how the DAG mutation affects the live ranges (and cons
     <pre class="av-code" tabindex="0"></pre>
   </details>
 
+</figure>
+
+<h2>Results</h2>
+
+<p>
+The following are some metrics of the kernels we've been examining, determined by running the kernels on an AMD simulator of the MI450.
+</p>
+
+<figure class="rs" id="rs">
+  <div class="rs-tabs" role="group" aria-label="Metric"></div>
+  <svg class="rs-svg" viewBox="0 0 680 300" role="img"
+       aria-label="Before and after bars for the selected metric, on both kernels"></svg>
+  <p class="rs-caption"></p>
+  <ul class="rs-legend">
+    <li><span class="rs-key rs-koff"></span>no mutation</li>
+    <li><span class="rs-key rs-kon"></span>with mutation</li>
+  </ul>
 </figure>

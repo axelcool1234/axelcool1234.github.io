@@ -163,6 +163,10 @@ export class AsmView {
       else if (/^\s+ds_load/.test(text)) cls.push("is-ds");
       else if (/^\s+v_wmma/.test(text)) cls.push("is-wmma");
       else if (/^\s+s_wait_dscnt/.test(text)) cls.push("is-wait");
+      // Spill code. Red, and the only red in the listing: 207 of these in the
+      // mxfp loop without the mutation, 4 with it, which is the results
+      // widget's spill count made visible.
+      else if (/^\s+scratch_(store|load)/.test(text)) cls.push("is-scratch");
       if (n === here) cls.push("is-here");
       if (this.clickable.has(n)) cls.push("is-clickable");
       if (n < a || n > b) cls.push("is-outside");
