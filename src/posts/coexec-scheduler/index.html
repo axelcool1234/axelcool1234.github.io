@@ -358,10 +358,10 @@ With these added edges forming a window for every <code>ds_load</code> fragment,
   <figcaption></figcaption>
 </figure>
 
-<h3>Live range reduction</h3>
+<h3>Live range reduction and spreading out waits</h3>
 
 <p>
-The following chart shows how the DAG mutation affects the live ranges (and consequently, the VGPR usage) of the <code>ds_load</code> fragments. The wait-stall view counts only the <code>s_wait_dscnt</code>s inside the hot loop, which is where the mutation acts: the prologue and epilogue drains are identical with and without it, and large enough (177 against the loop's 83, on the mxfp GEMM) to flatten everything else if they were included. The figure in the talk plots the whole function, which is why it shows stalls at either end.
+The following chart shows how the DAG mutation affects the live ranges (and consequently, the VGPR usage) of the <code>ds_load</code> fragments, as well as the <code>s_wait_dscnt</code>s. As shown, the live ranges are significantly reduced and the waits are spread out, allowing for better latency hiding! Click any of the load fragments or the waits to see where it is in the assembly code.
 </p>
 
 <figure class="lr" id="lr">
@@ -386,12 +386,12 @@ The following chart shows how the DAG mutation affects the live ranges (and cons
   <ul class="lr-legend">
     <li><span class="lr-key lr-kheld"></span>held live but not yet read</li>
     <li><span class="lr-key lr-kinuse"></span>in use (first to last consumer)</li>
-    <li><span class="lr-key lr-kclamp"></span>in use, gained a WMMA &rarr; ds_load edge</li>
+    <li><span class="lr-key lr-kclamp"></span>in use, gained a WMMA &rarr; ds_load edge (first to last consumer)</li>
     <li><span class="lr-key lr-kghost"></span>held live without the mutation</li>
   </ul>
 
   <details class="av">
-    <summary>Show the assembly</summary>
+    <summary>Show assembly</summary>
     <div class="av-bar">
       <button type="button" data-av="prev" aria-label="Previous instruction">&larr;</button>
       <button type="button" data-av="next" aria-label="Next instruction">&rarr;</button>

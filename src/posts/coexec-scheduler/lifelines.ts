@@ -177,7 +177,7 @@ if (root) {
     }
     drawYLabel(svg, {
       x: 12, cy: (G.barsTop + G.histBot) / 2,
-      lines: ["DS ops waited on", "(per s_wait_dscnt)"],
+      lines: ["DS ops waited on"],
     });
   }
 
@@ -251,7 +251,7 @@ if (root) {
       .forEach((e) => e.classList.toggle("is-on", e.dataset.line === String(line)));
     view_select({
       lines: [line], consumers: [], ops, kind: "wait",
-      label: `s_wait_dscnt after W[${wmma}] - stalls on ${stalled} DS op${stalled === 1 ? "" : "s"}`,
+      label: `s_wait_dscnt after W[${wmma}], stalls on ${stalled} DS op${stalled === 1 ? "" : "s"}`,
     });
   }
 

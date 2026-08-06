@@ -181,10 +181,10 @@ export class AsmView {
       ? t.label
         ? `${t.label}${this.cursor >= 0 ? ` - at line ${this.jumps[this.cursor]}`
              + (this.cursor === 0 ? "" : ` (op ${this.cursor} of ${(t.ops ?? []).length})`) : ""}`
-        : `${t.lines.length} subload${t.lines.length === 1 ? "" : "s"}, `
-        + `${t.consumers.length} consuming WMMA${t.consumers.length === 1 ? "" : "s"}`
+        : `${t.lines.length} load${t.lines.length === 1 ? "" : "s"}, `
+        + `${t.consumers.length} consumer${t.consumers.length === 1 ? "" : "s"}`
         + (this.cursor >= 0 ? ` - at line ${this.jumps[this.cursor]}` : "")
-      : `${s.file}, hot loop ${a}–${b}. Click a fragment above to trace it.`;
+      : `${s.file}, hot loop at lines ${a}-${b}`;
   }
 }
 
