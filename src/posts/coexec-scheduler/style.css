@@ -904,6 +904,7 @@
 }
 .lr-controls button[aria-pressed="true"] { border-color: var(--primary); background: var(--surface); }
 
+.lr-held.is-dim, .lr-use.is-dim { opacity: 0.25; }
 .lr-held { fill: var(--error); }
 .lr-use { fill: var(--secondary); }
 .lr-use.is-clamped { fill: var(--primary); }

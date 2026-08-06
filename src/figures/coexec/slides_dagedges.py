@@ -182,9 +182,8 @@ class DagEdgesSlides(Slide):
                     font_size=16, color=DIM).move_to([1.5, 0.6, 0])
         self.play(LaggedStartMap(FadeIn, ghosts, lag_ratio=0.1), FadeIn(glab))
         self.wait(0.9)
-        punch = Text("same loads, same order - issued later\n"
-                     "shorter live ranges, waits better hidden by WMMA latency",
-                     font_size=20, color=OK, line_spacing=0.7)
+        punch = Text("shorter live ranges, waits better hidden by WMMA latency",
+                     font_size=20, color=OK)
         punch.move_to([-0.8, 1.55, 0])
         self.play(FadeIn(punch))
         self.wait(2.4)

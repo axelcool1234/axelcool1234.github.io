@@ -222,9 +222,17 @@ if (root) {
       heldR[i].setAttribute("width", String(Math.max(0, x(cmin) - x(issued))));
       useR[i].setAttribute("x", String(x(cmin)));
       useR[i].setAttribute("width", String(Math.max(0, x(cmax) - x(cmin))));
+      const on = picked === -1 || picked === i;
+      heldR[i].classList.toggle("is-dim", !on);
+      useR[i].classList.toggle("is-dim", !on);
+      // The ghost's dimming is folded into the opacity attribute rather than
+      // given a CSS class of its own: a CSS rule beats a presentation
+      // attribute, so an .is-dim { opacity } would clobber the value the
+      // mutation toggle animates -- and make ghosts visible at mutation-off,
+      // where there is nothing to be a ghost of.
+      ghostR[i].setAttribute("opacity", String(0.3 * alpha * (on ? 1 : 0.25)));
     });
     // Nothing is ghosted at mutation-off: there is no earlier state to show.
-    ghostR.forEach((g) => g.setAttribute("opacity", String(0.3 * alpha)));
     const live = gridOff.map((v, i) => lerp(v, gridOn[i], alpha));
     curveLive.setAttribute("d", gridPath(live, false));
     fillLive.setAttribute("d", gridPath(live, true));
@@ -240,6 +248,7 @@ if (root) {
   function pick(i: number, scroll = true) {
     picked = i;
     rowHit.forEach((r, k) => r.classList.toggle("is-on", k === i));
+    render();                       // the dimming lives there, with the ghosts
     const side = mutation ? D!.on : D!.off;
     asm.select(i === -1 ? null : {
       lines: side.bars[i].lines, consumers: side.bars[i].consumers,
