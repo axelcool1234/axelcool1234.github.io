@@ -103,11 +103,6 @@
         # Buildable on its own so the ~7 min figure render can be iterated on
         # without rebuilding the whole site.
         figures = import ./generators/coexec-figures.nix { inherit pkgs; };
-        # The same deck as a PowerPoint: nix build .#pptx
-        pptx = import ./generators/coexec-figures.nix {
-          inherit pkgs;
-          format = "pptx";
-        };
       };
 
       apps.${system} = {

@@ -9,12 +9,7 @@
 # entry assets with `writeTextDir (readFile ...)`, and readFile refuses binary
 # files outright. Media produced by a derivation lands in $out directly and never
 # goes near readFile, which is why the deck is built rather than checked in.
-#
-# format = "html" builds the deck the website serves; "pptx" builds the same
-# scenes, in the same order, as a PowerPoint to hand round. One recipe, so the
-# two cannot drift -- the pptx used to be assembled by a separate script that
-# pasted the plot slides on after the fact.
-{ pkgs, format ? "html" }:
+{ pkgs }:
 let
   # manim-slides pulls in rtoml, whose Rust extension segfaults running its OWN
   # pytest suite under CPython 3.14. The package is fine -- only the test run
@@ -32,7 +27,6 @@ let
     p.matplotlib
     p.numpy
     p.pillow
-    p.python-pptx   # manim-slides' pptx exporter
   ]);
 
   # reveal.js, pinned rather than loaded from jsDelivr at view time: the deck
@@ -98,7 +92,7 @@ let
 
   sceneList = pkgs.lib.concatMapStringsSep " " (s: s.scene) sceneOrder;
 in
-pkgs.runCommand (if format == "pptx" then "coexec-talk-pptx" else "coexec-figures")
+pkgs.runCommand "coexec-figures"
 {
   nativeBuildInputs = [ py pkgs.ffmpeg pkgs.fontconfig pkgs.dejavu_fonts ];
 } ''
@@ -130,21 +124,6 @@ pkgs.runCommand (if format == "pptx" then "coexec-talk-pptx" else "coexec-figure
   mkdir -p fig
   ${renderPlots}
   ${renderScenes}
-
-  if [ "${format}" = pptx ]; then
-    mkdir -p "$out"
-    # Same BT.601 stamp as the html path applies to the copied deck assets, but
-    # done here on the sources, because the pptx embeds them and there is no
-    # later chance. See the long note further down for why.
-    find ./media ./fig -name '*.mp4' -print0 | while IFS= read -r -d "" v; do
-      ffmpeg -loglevel error -y -i "$v" -c copy -f mp4 \
-        -bsf:v h264_metadata=colour_primaries=6:transfer_characteristics=6:matrix_coefficients=6 \
-        "$v.tagged" && mv "$v.tagged" "$v"
-    done
-    manim-slides convert --to=pptx ${sceneList} "$out/coexec-talk.pptx"
-    echo "pptx: $(du -h "$out/coexec-talk.pptx" | cut -f1), from ${toString (builtins.length sceneOrder)} scenes"
-    exit 0
-  fi
 
   dest="$out/presentations/coexec-scheduler"
   mkdir -p "$dest"
