@@ -26,7 +26,8 @@ interface Panel {
 interface Data { kernels: string[]; panels: Panel[] }
 
 const VB_W = 680, VB_H = 300;
-const X0 = 62, X1 = 664, TOP = 18, BOT = 232;
+// Leave room between the rotated title and tick labels such as 1,000,000.
+const X0 = 86, X1 = 664, TOP = 18, BOT = 232, Y_LABEL_X = 11;
 
 const root = document.getElementById("rs");
 if (root) {
@@ -106,8 +107,8 @@ if (root) {
 
     svg.appendChild(svgEl("line", { class: "rs-axis", x1: X0, y1: BOT, x2: X1, y2: BOT }));
     const ylab = svgEl("text", {
-      class: "ch-axis", x: 13, y: (TOP + BOT) / 2,
-      "text-anchor": "middle", transform: `rotate(-90 13 ${(TOP + BOT) / 2})`,
+      class: "ch-axis", x: Y_LABEL_X, y: (TOP + BOT) / 2,
+      "text-anchor": "middle", transform: `rotate(-90 ${Y_LABEL_X} ${(TOP + BOT) / 2})`,
     });
     ylab.textContent = p.title + (logs ? " (log scale)" : "");
     svg.appendChild(ylab);

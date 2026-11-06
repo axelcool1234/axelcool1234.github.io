@@ -21,7 +21,7 @@
 
 import { play, wait, smooth, beginSkip, endSkip } from "./anim.js";
 import { Geom, svgEl, xScaleFor, rowsIn, drawXAxis, drawYLabel, drawYTicks,
-         drawRowTicks, niceTicks, stepPath } from "./chart.js";
+         drawRowTicks, niceTicks, stepPath, chartSelection } from "./chart.js";
 
 interface Frag {
   vgprs: number;
@@ -58,6 +58,7 @@ const root = document.getElementById("bw");
 if (root) {
   const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
   const svg = q<SVGSVGElement>(".bw-svg");
+  const fragmentControl = chartSelection(q(".bw-toolbar"), "Select budget fragment", value => select(Number(value)));
   const sub = q<HTMLElement>(".bw-sub");
   const info = q<HTMLElement>(".bw-info");
   const progress = q<HTMLElement>(".bw-progress");
@@ -106,6 +107,11 @@ if (root) {
 
   function build() {
     svg.replaceChildren();
+    fragmentControl.replaceChildren(new Option("Choose a fragment", "-1"));
+    D!.frags.forEach((fragment, index) => fragmentControl.add(new Option(
+      `Fragment ${index}: ${fragment.vgprs} VGPRs, first read at WMMA ${fragment.cmin}`,
+      String(index),
+    )));
 
     drawXAxis(svg, G, { x, ticks: TICKS, title: "WMMAs issued" });
     // The VGPR scale was unlabelled: the budget line named its own value but
@@ -209,6 +215,7 @@ if (root) {
 
   function select(i: number) {
     selected = i;
+    fragmentControl.value = String(i);
     rowHit.forEach((r, k) => r.classList.toggle("is-on", k === i));
     if (i === -1) {
       info.innerHTML = `<p class="bw-hint">Click any fragment to see information about its window.</p>`;

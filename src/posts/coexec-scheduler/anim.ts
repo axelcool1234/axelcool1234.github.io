@@ -28,10 +28,8 @@ export const rushFrom = (t: number): number => 2 * smooth(t / 2 + 0.5) - 1;
 export const thereAndBack = (t: number): number =>
   t < 0.5 ? smooth(2 * t) : smooth(2 * (1 - t));
 
-// Always animated. This widget is a special case: the movement IS the
-// explanation, not decoration, so skipping it under prefers-reduced-motion left
-// nothing to read -- the whole sequence blinked past in a tenth of a second.
-export const reduced = (): boolean => false;
+// Retain the explanatory pauses between steps while avoiding motion effects.
+export const reduced = (): boolean => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // --- skipping ---------------------------------------------------------------
 //
@@ -55,14 +53,14 @@ export type Tick = (alpha: number) => void;
 // Run `tick` from alpha 0 to 1 over runTime ms. Resolves when finished, so a
 // scene reads as a straight sequence of awaits, like manim's self.play.
 export function play(tick: Tick, runTime = 500, rate = smooth): Promise<void> {
-  if (skipping || runTime <= 0) {
+  if (skipping || reduced() || runTime <= 0) {
     tick(1);
     return Promise.resolve();
   }
   return new Promise((resolve) => {
     const start = performance.now();
     const step = (now: number) => {
-      if (skipping) {          // cut short: land on the end state now
+      if (skipping || reduced()) { // land on the end state immediately
         tick(1);
         resolve();
         return;

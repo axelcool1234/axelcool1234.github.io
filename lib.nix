@@ -104,13 +104,14 @@ rec {
           ${head}
         </head>
         <body>
+          <a class="skip-link" href="#main-content">Skip to content</a>
           <header>
             <nav>
               ${navbar}
             </nav>
           </header>
 
-          <main>
+          <main id="main-content" tabindex="-1">
             ${body}
           </main>
           ${bodyTail}

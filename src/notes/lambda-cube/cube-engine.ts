@@ -401,7 +401,7 @@ export function mountCube(config: CubeConfig): void {
     const note = node.note ?? "";
 
     info.innerHTML = `
-      <h2>${heading}</h2>
+      <h3>${heading}</h3>
       <p>${nodeDescription(node)}</p>
       ${note}
       <dl>
@@ -418,14 +418,16 @@ export function mountCube(config: CubeConfig): void {
   // Update state: select node at given index, and update the info panel.
   function selectNode(index: number): void {
     selection = { kind: "node", index };
+    selectionControl.value = `node-${index}`;
     updateInfo(nodes[index]);
   }
 
   // Update state: select axis at given index, and update the info panel.
   function selectAxis(index: number): void {
     selection = { kind: "axis", index };
+    selectionControl.value = `axis-${index}`;
     info.innerHTML = `
-      <h2>${config.axes[index].label} Axis</h2>
+      <h3>${config.axes[index].label} Axis</h3>
       <p>${config.axes[index].description}</p>
     `;
   }
@@ -696,10 +698,49 @@ export function mountCube(config: CubeConfig): void {
 
   // Main animation loop: advance the animation by updating node positions, redrawing the scene, and scheduling the next frame.
   function animate(time: number): void {
-    updateNodePositions(time);
+    if (!paused) updateNodePositions(time);
     draw();
     requestAnimationFrame(animate);
   }
+
+  // Native controls expose every node and axis without requiring a pointer.
+  // They live outside the SVG because the animation rebuilds its children.
+  const controls = document.createElement("div");
+  controls.className = "cube-controls";
+  const label = document.createElement("label");
+  label.textContent = "Explore this cube: ";
+  const selectionControl = document.createElement("select");
+  for (const [index, node] of nodes.entries()) {
+    selectionControl.add(new Option(
+      node.name || `${style.unnamedNodeLabel}: ${node.axisValues.join(", ")}`,
+      `node-${index}`,
+    ));
+  }
+  for (const [index, axis] of config.axes.entries()) {
+    selectionControl.add(new Option(`${axis.label} axis`, `axis-${index}`));
+  }
+  selectionControl.addEventListener("change", () => {
+    const [kind, index] = selectionControl.value.split("-");
+    if (kind === "node") selectNode(Number(index));
+    else selectAxis(Number(index));
+  });
+  label.appendChild(selectionControl);
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  let paused = reducedMotion.matches;
+  const pauseButton = document.createElement("button");
+  pauseButton.type = "button";
+  pauseButton.textContent = "Pause cube animation";
+  pauseButton.setAttribute("aria-pressed", String(paused));
+  pauseButton.addEventListener("click", () => {
+    paused = !paused;
+    pauseButton.setAttribute("aria-pressed", String(paused));
+  });
+  reducedMotion.addEventListener("change", () => {
+    paused = reducedMotion.matches;
+    pauseButton.setAttribute("aria-pressed", String(paused));
+  });
+  controls.append(label, pauseButton);
+  svg.before(controls);
 
   // Drag handlers
   svg.addEventListener("pointerdown", event => {

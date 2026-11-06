@@ -10,6 +10,40 @@
 
 export const SVG_NS = "http://www.w3.org/2000/svg";
 
+// Keep keyboard controls outside SVG images so assistive technology can reach them.
+export function chartSelection(container: Element, name: string, onChange: (value: string) => void): HTMLSelectElement {
+  const picker = document.createElement("details");
+  picker.className = "chart-selection";
+  const summary = document.createElement("summary");
+  summary.textContent = name;
+  const select = document.createElement("select");
+  select.size = 8;
+  select.setAttribute("aria-label", name);
+  const close = () => {
+    picker.open = false;
+    summary.focus();
+  };
+  select.addEventListener("change", () => onChange(select.value));
+  select.addEventListener("click", event => {
+    if (event.target instanceof HTMLOptionElement) close();
+  });
+  picker.addEventListener("keydown", event => {
+    if (event.key === "Escape" || (event.key === "Enter" && event.target === select)) {
+      close();
+      event.preventDefault();
+    }
+  });
+  picker.addEventListener("toggle", () => {
+    if (picker.open) select.focus();
+  });
+  document.addEventListener("pointerdown", event => {
+    if (!picker.contains(event.target as Node)) picker.open = false;
+  });
+  picker.append(summary, select);
+  container.appendChild(picker);
+  return select;
+}
+
 export function svgEl(name: string, attrs: Record<string, string | number>): SVGElement {
   // Explicit type: with a non-literal tag name tsc cannot pick the SVG overload
   // of createElementNS and falls back to `unknown`.

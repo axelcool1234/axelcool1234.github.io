@@ -1,5 +1,21 @@
 .cube svg {
   overflow: visible;
+  width: 100%;
+  height: auto;
+}
+
+.cube-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cube-controls select {
+  max-width: 100%;
+}
+
+.cube-controls label {
+  min-width: 0;
 }
 
 .cube-info dl {

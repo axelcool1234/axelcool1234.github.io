@@ -58,6 +58,7 @@ export class AsmView {
     toggle: HTMLButtonElement; // loop only <-> whole file
     onLine?: (line: number) => void;   // a clickable instruction was picked
   }) {
+    o.status.setAttribute("role", "status");
     // Delegated, because the listing is re-rendered on every selection and
     // per-line listeners would have to be reattached each time.
     o.code.addEventListener("pointerdown", (ev) => {

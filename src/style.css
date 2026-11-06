@@ -22,6 +22,8 @@ nav {
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--outline);
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .nav-links {
@@ -32,6 +34,7 @@ nav {
 .nav-controls {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 nav a {
@@ -89,6 +92,7 @@ nav a:hover {
   border: 1px solid var(--outline);
   background: var(--surface_variant);
   color: var(--on_surface);
+  box-sizing: border-box;
 }
 
 .theme-options {
@@ -134,6 +138,44 @@ nav a:hover {
 
 pre,
 code {
-  background: var(--terminal_background);
-  color: var(--terminal_foreground);
+  color: inherit;
+}
+
+button,
+input,
+select,
+summary,
+nav a {
+  min-height: 24px;
+  min-width: 24px;
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--on_surface);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  color: var(--on_surface);
+  z-index: 10;
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (max-width: 40rem) {
+  .theme-menu {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    min-width: 0;
+  }
 }

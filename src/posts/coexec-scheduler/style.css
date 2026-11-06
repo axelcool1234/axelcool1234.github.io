@@ -10,6 +10,65 @@
   color: var(--on_surface_variant);
 }
 
+.chart-selection {
+  position: relative;
+  margin-left: auto;
+  font-size: 0.82em;
+}
+
+.chart-selection summary {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--on_surface);
+  cursor: pointer;
+}
+
+.chart-selection[open] summary,
+.chart-selection summary:hover {
+  border-color: var(--primary);
+}
+
+.chart-selection select {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 2;
+  width: min(25rem, 75vw);
+  padding: 0.35rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--on_surface);
+  font: inherit;
+}
+
+.chart-selection option {
+  padding: 0.35rem;
+}
+
+.chart-selection option:checked {
+  background: var(--hover);
+  background-image: linear-gradient(var(--hover), var(--hover));
+  color: var(--on_hover);
+}
+
+@media (max-width: 40rem) {
+  .chart-selection[open] {
+    flex-basis: 100%;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .chart-selection select {
+    position: static;
+    display: block;
+    width: 100%;
+    margin-top: 0.35rem;
+  }
+}
+
 .rq {
   margin: 1.5rem 0;
   padding: 0.9rem;
@@ -491,8 +550,7 @@
   color: var(--on_surface_variant);
 }
 
-/* Always shown, and deliberately muted: it is the branch that never gets taken
- * while anything is left in the queue. */
+/* A dashed border marks the inactive branch without fading its explanation. */
 .te-coda {
   flex: 1 1 0;
   min-width: 0;
@@ -501,7 +559,7 @@
   border-left: 2px solid var(--outline);
   background: var(--surface);
   border-radius: 0 6px 6px 0;
-  opacity: 0.65;
+  border-left-style: dashed;
 }
 
 .te-coda pre { margin: 0 0 0.3rem; font-size: 0.72em; overflow-x: auto; color: var(--on_surface_variant); }
@@ -694,7 +752,8 @@
 
 .bw-svg { width: 100%; height: auto; display: block; }
 
-.bw-kernels { display: flex; gap: 0.4rem; margin: 0 0 0.7rem; }
+.bw-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem; }
+.bw-kernels { display: flex; gap: 0.4rem; }
 .bw-kernels button {
   font: inherit;
   font-size: 0.82em;
@@ -818,18 +877,16 @@
 /* A gated block is in the queue but not in Available, so it reads as present
    but inactive rather than as a normal waiting candidate. */
 .te-block { display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem; }
-.te-block.is-gated { opacity: 0.55; }
 .dr-gate {
   flex: 0 0 auto;
   font-size: 0.82em;
-  opacity: 0.85;
   font-variant-numeric: tabular-nums;
 }
 
 /* The bumpCycle loop is greyed by default (see the run without the mutation,
    where it never applies). Here it genuinely toggles. */
 .te-coda.is-active {
-  opacity: 1;
+  border-left-style: solid;
   /* The same colour as the "now" line, which is the thing this box moves: while
      it is live the clock is advancing. Deliberately not a green -- 17 of the 66
      themes have no green to reach for, since --terminal_normal_green is warm in
@@ -892,6 +949,8 @@
 
 .lr-controls { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin: 0 0 0.7rem; }
 .lr-kernels, .lr-dag, .lr-view { display: flex; gap: 0.4rem; }
+.lr-mutation-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; flex: 1 1 auto; }
+.lr-mutation-controls .chart-selection { margin-left: 0; }
 .lr-controls button {
   font: inherit;
   font-size: 0.82em;
@@ -995,17 +1054,17 @@
 }
 
 .av-l { display: block; padding: 0 0.6rem; color: var(--on_surface_variant); }
-/* Line numbers, dimmed and unselectable so copying the pane copies code. */
+/* Keep line numbers readable and out of copied code. */
 .av-l i {
   display: inline-block;
   width: 3.2em;
   margin-right: 0.7em;
   text-align: right;
   font-style: normal;
-  opacity: 0.4;
+  color: inherit;
   user-select: none;
 }
-.av-l.is-outside { opacity: 0.5; }
+.av-l.is-outside { font-style: italic; }
 /* One colour per instruction class, matching the widgets above: a ds_load is
    --secondary wherever it appears, a WMMA --primary, a wait --tertiary. Red is
    reserved for spill code, which appears nowhere else. */
@@ -1014,24 +1073,22 @@
 .av-l.is-wait { color: var(--tertiary); }
 .av-l.is-scratch { color: var(--error); }
 
-/* The selected fragment and the WMMAs that read it, in the same two colours but
-   at full strength with a tinted row, so they stand out from the other loads
-   and WMMAs rather than looking like more of the same. */
-.av-l.is-sub { color: var(--secondary); font-weight: 600; background: color-mix(in srgb, var(--secondary) 14%, transparent); }
+/* Keep the tinted rows; each foreground is adjusted against its actual tint. */
+.av-l.is-sub { color: var(--assembly_load_fg); font-weight: 600; background: color-mix(in srgb, var(--secondary) 14%, transparent); }
 /* A picked wait takes the wait colour, not the load colour -- it is neither a
    subload nor a consumer, and reusing the red made it read as one. */
-.av-l.is-waitsel { color: var(--tertiary); font-weight: 600; background: color-mix(in srgb, var(--tertiary) 14%, transparent); }
+.av-l.is-waitsel { color: var(--assembly_wait_fg); font-weight: 600; background: color-mix(in srgb, var(--tertiary) 14%, transparent); }
 /* The DS ops a selected wait is actually waiting on. Load-coloured, because
    that is what they are, but lighter than a picked fragment so the wait itself
    stays the focus. Selection is the same colour bolded, not a different one --
    otherwise a picked load and the spill code would both be red. */
-.av-l.is-op { color: var(--secondary); background: color-mix(in srgb, var(--secondary) 7%, transparent); }
-.av-l.is-cons { color: var(--primary); font-weight: 600; background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.av-l.is-op { color: var(--assembly_op_fg); background: color-mix(in srgb, var(--secondary) 7%, transparent); }
+.av-l.is-cons { color: var(--assembly_consumer_fg); font-weight: 600; background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .av-l.is-here { outline: 1px solid var(--outline); outline-offset: -1px; }
 /* Only the instructions that map back to something on the chart invite a
    click; the rest of the listing is inert. */
 .av-l.is-clickable { cursor: pointer; }
-.av-l.is-clickable:hover { background: color-mix(in srgb, var(--on_surface) 8%, transparent); }
+:where(.av-l.is-clickable:hover) { background: var(--surface_variant); }
 
 .lr-rowhit { fill: transparent; cursor: pointer; }
 .lr-rowhit.is-on { fill: var(--on_surface); opacity: 0.07; }

@@ -3,15 +3,14 @@ name: Deploy Pages
 on:
   push:
     branches: [ main ]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -21,19 +20,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: nixbuild/nix-quick-install-action@v35
       - name: Nix store cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+        uses: nix-community/cache-nix-action@v7
         with:
-          use-flakehub: false
+          # One store archive avoids Magic Nix Cache's per-path API rate limit.
+          # Include the commit so new outputs are saved even when the lock is unchanged.
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}-${{ github.sha }}
+          restore-prefixes-first-match: |
+            nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}-
+            nix-${{ runner.os }}-${{ runner.arch }}-
+          gc-max-store-size-linux: 3G
+      - name: Show Nix cache and build plan
+        run: |
+          nix config show substituters
+          nix build .#site --dry-run
       - name: Build site
-        run: nix build .#site
+        run: nix build .#site --print-build-logs
+      - name: Install accessibility analyzer
+        run: nix develop -c npm ci --ignore-scripts
+      - name: Check accessibility
+        run: nix develop -c npm run check:a11y
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: accessibility-report.json
       - name: Upload artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: result
 
   deploy:
+    if: github.event_name != 'pull_request'
+    permissions:
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
     needs: build
     environment:

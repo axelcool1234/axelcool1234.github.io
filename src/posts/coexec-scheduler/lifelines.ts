@@ -16,7 +16,7 @@
 
 import { play, smooth } from "./anim.js";
 import { Geom, svgEl, xScaleFor, rowsIn, drawXAxis, drawYLabel, drawYTicks,
-         drawRowTicks, niceTicks, seriesPath } from "./chart.js";
+         drawRowTicks, niceTicks, seriesPath, chartSelection } from "./chart.js";
 import { AsmView, AsmSide } from "./asmview.js";
 
 interface Bar {
@@ -48,6 +48,19 @@ const root = document.getElementById("lr");
 if (root) {
   const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
   const svg = q<SVGSVGElement>(".lr-svg");
+  const selectionControl = chartSelection(q(".lr-mutation-controls"), "Select fragment or wait", value => {
+    if (value.startsWith("fragment-")) {
+      setView("ranges");
+      pick(Number(value.slice("fragment-".length)));
+    } else if (value.startsWith("wait-")) {
+      const side = mutation ? D!.asm.on : D!.asm.off;
+      const wait = side.waits[Number(value.slice("wait-".length))];
+      setView("stalls");
+      pickWait(wait.line, wait.stalled, wait.wmma, wait.ops);
+    } else {
+      pick(-1);
+    }
+  });
   const legend = q<HTMLElement>(".lr-legend");
   const dagBtns = Array.from(root.querySelectorAll<HTMLButtonElement>(".lr-dag button"));
 
@@ -247,6 +260,7 @@ if (root) {
   // twice to cycle through the fragments it reads.
   function pick(i: number, scroll = true) {
     picked = i;
+    selectionControl.value = i === -1 ? "none" : `fragment-${i}`;
     rowHit.forEach((r, k) => r.classList.toggle("is-on", k === i));
     render();                       // the dimming lives there, with the ghosts
     const side = mutation ? D!.on : D!.off;
@@ -259,6 +273,8 @@ if (root) {
                     scroll = true) {
     picked = -1;
     pickedWait = line;
+    const side = mutation ? D!.asm.on : D!.asm.off;
+    selectionControl.value = `wait-${side.waits.findIndex(wait => wait.line === line)}`;
     rowHit.forEach((r) => r.classList.remove("is-on"));
     svg.querySelectorAll<SVGElement>(".lr-stallhit")
       .forEach((e) => e.classList.toggle("is-on", e.dataset.line === String(line)));
@@ -304,6 +320,13 @@ if (root) {
   function indexSide() {
     const side = mutation ? D!.on : D!.off;
     const asmSide = mutation ? D!.asm.on : D!.asm.off;
+    selectionControl.replaceChildren(new Option("Choose a fragment or wait", "none"));
+    side.bars.forEach((bar, index) => selectionControl.add(new Option(
+      `Fragment ${index}: ${bar.vgprs} VGPRs, first read at WMMA ${bar.cmin}`, `fragment-${index}`,
+    )));
+    asmSide.waits.forEach((wait, index) => selectionControl.add(new Option(
+      `Wait after WMMA ${wait.wmma}: stalls on ${wait.stalled} DS operations`, `wait-${index}`,
+    )));
     subOf = new Map(); consOf = new Map(); waitOf = new Map();
     side.bars.forEach((b, i) => {
       b.lines.forEach((l) => subOf.set(l, i));

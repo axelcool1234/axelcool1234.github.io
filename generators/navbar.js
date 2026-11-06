@@ -32,6 +32,7 @@ const modeControl = {
 function selectButton(buttons, selectedButton) {
   for (const button of buttons) {
     button.classList.toggle("selected", button === selectedButton);
+    button.setAttribute("aria-pressed", String(button === selectedButton));
   }
 }
 
@@ -90,6 +91,7 @@ for (const button of themeControl.buttons) {
   button.addEventListener("click", () => {
     applyControl(themeControl, button.dataset.themeFile);
     themeControl.picker.open = false;
+    themeControl.summary.focus();
     themeSearch.value = "";
     updateThemeFilter();
   });
@@ -100,6 +102,7 @@ for (const button of modeControl.buttons) {
   button.addEventListener("click", () => {
     applyControl(modeControl, button.dataset.themeMode);
     modeControl.picker.open = false;
+    modeControl.summary.focus();
   });
 }
 
@@ -113,6 +116,17 @@ themeControl.picker.addEventListener("toggle", () => {
     themeSearch.select();
   }
 });
+
+// Close popovers with Escape and keep focus on their trigger.
+for (const control of [themeControl, modeControl]) {
+  control.picker.addEventListener("keydown", event => {
+    if (event.key === "Escape" && control.picker.open) {
+      control.picker.open = false;
+      control.summary.focus();
+      event.preventDefault();
+    }
+  });
+}
 
 // Initialize the navbar from saved values, then sync the theme list visibility.
 applyControl(modeControl, storedValue(modeControl));

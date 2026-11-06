@@ -19,7 +19,7 @@ in
     <details id="theme-picker" class="theme-picker">
       <summary id="theme-summary" class="theme-summary">Theme</summary>
       <div class="theme-menu">
-        <input id="theme-search" class="theme-search" type="search" placeholder="Search themes">
+        <input id="theme-search" class="theme-search" type="search" aria-label="Search themes" placeholder="Search themes">
         <div class="theme-options">
           ${themeOptions}
         </div>

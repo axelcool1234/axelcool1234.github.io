@@ -30,6 +30,11 @@
         inherit lib themeNames;
       };
 
+      figures = import ./generators/accessible-deck.nix {
+        inherit pkgs;
+        figures = import ./generators/coexec-figures.nix { inherit pkgs; };
+      };
+
       # Site output (this is the static site generation in action)
       site =
         let
@@ -75,7 +80,7 @@
                 import ./generators/presentations.nix { inherit lib; }
               ))
               # Figures for the CoExec deck, rendered from source at build time
-              (import ./generators/coexec-figures.nix { inherit pkgs; })
+              figures
               # The four assembly listings the live-range widget reads. Kept in
               # src/figures/coexec/asm so the extractor that maps fragments onto
               # their lines sits beside them, and copied here rather than
@@ -91,18 +96,21 @@
               # 66 on every run and the cache dutifully re-uploaded them -- to a
               # cache that, by that same flag, would never be read from. Copying
               # the directory once is substitutable and is a single store path.
-              (pkgs.runCommand "themes" { } ''
-                mkdir -p "$out/themes"
-                cp ${./src/themes}/*.css "$out/themes/"
+              (pkgs.runCommand "themes" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+                python3 ${./generators/accessible-themes.py} ${./src/themes} "$out/themes"
               '')
             ];
         };
     in {
+      devShells.${system}.default = pkgs.mkShell {
+        packages = [ pkgs.nodejs pkgs.chromium ];
+        CHROMIUM_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
+      };
+
       packages.${system} = {
-        inherit site;
         # Buildable on its own so the ~7 min figure render can be iterated on
         # without rebuilding the whole site.
-        figures = import ./generators/coexec-figures.nix { inherit pkgs; };
+        inherit site figures;
       };
 
       apps.${system} = {
